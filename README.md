@@ -20,11 +20,11 @@ scripts/
   generate_deployment_vectors.py
   generate_near_boundary_vectors.py
   generate_final_paper_figures.py
+  generate_model_header.py
 
 deployment/esp32/
   sketch.ino
   diagram.json
-  offloading_model.h
   deployment_vectors.h
   boundary_vectors.h
   near_boundary_vectors.h
@@ -36,6 +36,8 @@ models/
 results/
   README.md
 ```
+
+The firmware includes `offloading_model.h` at compile time. Generate this header from the frozen INT8 model using `scripts/generate_model_header.py`; the generated header itself is not stored in the repository.
 
 ## Environment
 
@@ -74,7 +76,13 @@ python scripts/generate_deployment_vectors.py
 python scripts/generate_near_boundary_vectors.py
 ```
 
-The exact-tie header used in the proof-of-concept firmware is included under `deployment/esp32/`.
+The exact-tie validation header used in the proof-of-concept firmware is included under `deployment/esp32/`. Its original generator was not part of the supplied project files.
+
+5. Generate the C header from the frozen INT8 model before compiling the ESP32 firmware:
+
+```bash
+python scripts/generate_model_header.py
+```
 
 ## Main reported results
 
@@ -97,7 +105,7 @@ The modeled energy values are analytical energy-cost proxies rather than physica
 
 ## Frozen deployment artifact
 
-The exact INT8 model used by the proof-of-concept firmware is included in `models/` and embedded in `deployment/esp32/offloading_model.h`. See `ARTIFACTS.md` for SHA-256 hashes.
+The exact INT8 model used in the proof-of-concept firmware is included in `models/`. See `ARTIFACTS.md` for its SHA-256 hash and artifact notes.
 
 ## License
 
