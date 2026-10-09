@@ -101,8 +101,6 @@ def calculate_costs(states):
     network_latency = states[:, 1]
     feedback = states[:, 3]
 
-    # Degraded feedback increases effective communication latency.
-
     effective_network_latency = (
         network_latency *
         (
@@ -657,7 +655,6 @@ def profile_model(model):
         h.remove()
 
     if activation_sizes:
-
         peak_elements = max(
             activation_sizes
         )
@@ -717,9 +714,7 @@ def passes_constraints(profile):
 
 def main():
 
-    output_dir = (
-        "tinyml_search_results"
-    )
+    output_dir = "results"
 
     os.makedirs(
         output_dir,
@@ -839,3 +834,281 @@ def main():
                     "validation_mean_regret":
                         validation_metrics[
                             "mean_regret"
+                        ],
+
+                    "test_reference_agreement":
+                        test_metrics[
+                            "reference_agreement"
+                        ],
+
+                    "mean_objective":
+                        test_metrics[
+                            "mean_objective"
+                        ],
+
+                    "oracle_objective":
+                        test_metrics[
+                            "oracle_objective"
+                        ],
+
+                    "mean_regret":
+                        test_metrics[
+                            "mean_regret"
+                        ],
+
+                    "median_regret":
+                        test_metrics[
+                            "median_regret"
+                        ],
+
+                    "mean_normalized_regret":
+                        test_metrics[
+                            "mean_normalized_regret"
+                        ],
+
+                    "mean_latency":
+                        test_metrics[
+                            "mean_latency"
+                        ],
+
+                    "median_latency":
+                        test_metrics[
+                            "median_latency"
+                        ],
+
+                    "mean_energy":
+                        test_metrics[
+                            "mean_energy"
+                        ],
+
+                    "median_energy":
+                        test_metrics[
+                            "median_energy"
+                        ],
+
+                    "local_fraction":
+                        test_metrics[
+                            "local_fraction"
+                        ],
+
+                    "partial_fraction":
+                        test_metrics[
+                            "partial_fraction"
+                        ],
+
+                    "full_fraction":
+                        test_metrics[
+                            "full_fraction"
+                        ],
+
+                    "fp32_int8_action_agreement":
+                        int8_agreement
+                })
+
+    results_df = pd.DataFrame(
+        results
+    )
+
+    results_df.to_csv(
+        os.path.join(
+            output_dir,
+            "architecture_seed_results.csv"
+        ),
+        index=False
+    )
+
+    summary = (
+        results_df
+        .groupby(
+            [
+                "hidden_width",
+                "num_blocks"
+            ]
+        )
+        .agg(
+
+            test_reference_agreement_mean=(
+                "test_reference_agreement",
+                "mean"
+            ),
+
+            test_reference_agreement_std=(
+                "test_reference_agreement",
+                "std"
+            ),
+
+            mean_objective_mean=(
+                "mean_objective",
+                "mean"
+            ),
+
+            oracle_objective_mean=(
+                "oracle_objective",
+                "mean"
+            ),
+
+            mean_regret_mean=(
+                "mean_regret",
+                "mean"
+            ),
+
+            mean_regret_std=(
+                "mean_regret",
+                "std"
+            ),
+
+            mean_normalized_regret=(
+                "mean_normalized_regret",
+                "mean"
+            ),
+
+            mean_latency=(
+                "mean_latency",
+                "mean"
+            ),
+
+            median_latency=(
+                "median_latency",
+                "mean"
+            ),
+
+            mean_energy=(
+                "mean_energy",
+                "mean"
+            ),
+
+            median_energy=(
+                "median_energy",
+                "mean"
+            ),
+
+            int8_action_agreement_mean=(
+                "fp32_int8_action_agreement",
+                "mean"
+            ),
+
+            int8_action_agreement_std=(
+                "fp32_int8_action_agreement",
+                "std"
+            ),
+
+            int8_action_agreement_min=(
+                "fp32_int8_action_agreement",
+                "min"
+            ),
+
+            test_reference_agreement_min=(
+                "test_reference_agreement",
+                "min"
+            ),
+
+            parameters=(
+                "parameters",
+                "first"
+            ),
+
+            estimated_int8_model_bytes=(
+                "estimated_int8_model_bytes",
+                "first"
+            ),
+
+            peak_activation_bytes=(
+                "peak_activation_bytes",
+                "first"
+            ),
+
+            macs=(
+                "macs",
+                "first"
+            )
+        )
+        .reset_index()
+    )
+
+    summary.to_csv(
+        os.path.join(
+            output_dir,
+            "architecture_summary.csv"
+        ),
+        index=False
+    )
+
+    MIN_REFERENCE_AGREEMENT = 0.99
+    MIN_INT8_AGREEMENT = 0.99
+    MAX_AGREEMENT_SD = 0.005
+    MAX_INT8_AGREEMENT_SD = 0.005
+
+    summary["qualifies"] = (
+        (summary["estimated_int8_model_bytes"] <= MODEL_FLASH_BUDGET_BYTES)
+        & (summary["peak_activation_bytes"] <= MODEL_ACTIVATION_BUDGET_BYTES)
+        & (summary["macs"] <= MODEL_MAC_BUDGET)
+        & (summary["test_reference_agreement_mean"] >= MIN_REFERENCE_AGREEMENT)
+        & (summary["int8_action_agreement_mean"] >= MIN_INT8_AGREEMENT)
+        & (summary["test_reference_agreement_std"] <= MAX_AGREEMENT_SD)
+        & (summary["int8_action_agreement_std"] <= MAX_INT8_AGREEMENT_SD)
+    )
+
+    summary.to_csv(
+        os.path.join(output_dir, "architecture_summary.csv"),
+        index=False
+    )
+
+    shortlist = summary[summary["qualifies"]].copy()
+
+    shortlist = shortlist.sort_values(
+        ["parameters", "macs", "mean_regret_mean"]
+    )
+
+    shortlist.to_csv(
+        os.path.join(
+            output_dir,
+            "architecture_shortlist.csv"
+        ),
+        index=False
+    )
+
+    print("\n========================================")
+    print("Architecture Search Complete")
+    print("========================================")
+
+    print(
+        f"Evaluated architectures: "
+        f"{len(summary)}"
+    )
+
+    print(
+        f"Architectures satisfying all final criteria: "
+        f"{len(shortlist)}"
+    )
+
+    print("\nSmallest qualifying architectures:")
+
+    if len(shortlist) > 0:
+
+        print(
+            shortlist[
+                [
+                    "hidden_width",
+                    "num_blocks",
+                    "parameters",
+                    "macs",
+                    "mean_objective_mean",
+                    "mean_regret_mean",
+                    "test_reference_agreement_mean",
+                    "int8_action_agreement_mean"
+                ]
+            ].head(15).to_string(
+                index=False
+            )
+        )
+
+    else:
+
+        print(
+            "No architecture satisfied "
+            "the selected thresholds."
+        )
+
+if __name__ == "__main__":
+
+    main()
