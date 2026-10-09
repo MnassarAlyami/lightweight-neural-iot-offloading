@@ -1,13 +1,26 @@
 # Reproducibility environment
 
-The frozen Keras artifact records `keras_version=2.11.0` and the TensorFlow backend. The FP32 TFLite artifact records a minimum runtime version of `2.11.0`. These metadata values do not fully identify the original Python environment or exact package builds.
+The reported experiments were run with the following software environment:
 
-If the original training/search environment is still available, record it with:
+| Component | Version |
+|---|---|
+| Python | 3.7.6 |
+| TensorFlow | 2.11.0 |
+| PyTorch | 1.13.1+cpu |
+| NumPy | 1.21.6 |
+| pandas | 1.3.5 |
+| Matplotlib | 3.5.3 |
 
-```bash
-python --version
-python -c "import tensorflow as tf, torch, numpy as np, pandas as pd, matplotlib; print('tensorflow', tf.__version__); print('torch', torch.__version__); print('numpy', np.__version__); print('pandas', pd.__version__); print('matplotlib', matplotlib.__version__)"
-python -m pip freeze > environment-freeze.txt
+The original Python build was:
+
+```text
+Python 3.7.6 (default, Jan 8 2020, 20:23:39) [MSC v.1916 64 bit (AMD64)]
 ```
 
-Run these commands in the same virtual environment, Conda environment, or saved runtime that was used for the reported experiments. If that environment no longer exists, do not replace the missing versions with versions from a new environment; keep the verified artifact metadata above and treat the remaining versions as unavailable.
+This indicates a 64-bit Windows CPython environment built with Microsoft Visual C++ 2017.
+
+The frozen Keras artifact also records `keras_version=2.11.0` and the TensorFlow backend, while the FP32 TFLite artifact records a minimum runtime version of `2.11.0`. These artifact metadata values are consistent with the reported TensorFlow environment.
+
+For a close reproduction of the Python-side experiments, use the package versions above. The exact PyTorch build used for the architecture search was the CPU build reported as `1.13.1+cpu`.
+
+A full historical `pip freeze` is not required for the manuscript results because the principal numerical dependencies and framework versions used by the reported pipeline are now recorded explicitly.
