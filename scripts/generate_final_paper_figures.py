@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-ARCH_PATH = "architecture_seed_results.csv"
-COMBINED_PATH = "combined_sensitivity.csv"
-WEIGHT_PATH = "weight_sensitivity.csv"
+ARCH_PATH = "results/architecture_seed_results.csv"
+COMBINED_PATH = "results/combined_sensitivity.csv"
+WEIGHT_PATH = "results/weight_sensitivity.csv"
 
 X_TEST_PATH = "outputs/x_test.npy"
 Y_TEST_PATH = "outputs/y_test.npy"
@@ -291,7 +291,7 @@ def select_values(matrix, actions):
     return matrix[rows, actions]
 
 policies = {
-    "Analytical Oracle": oracle_actions,
+    "Analytical Reference": oracle_actions,
     "INT8 Neural Policy": int8_actions,
     "Static Baseline": baseline_actions
 }
@@ -383,7 +383,7 @@ print(summary_df.to_string(index=False))
 policy_names = list(policies.keys())
 
 short_labels = [
-    "Analytical\nOracle",
+    "Analytical\nReference",
     "INT8 Neural\nPolicy",
     "Static\nBaseline"
 ]
