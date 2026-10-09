@@ -1,26 +1,42 @@
 # A Lightweight Context-Aware Neural Offloading Strategy for IoT Edge Devices
 
-This repository contains the training, conversion, evaluation, and proof-of-concept deployment code associated with the manuscript **“A Lightweight Context-Aware Neural Offloading Strategy for IoT Edge Devices.”**
+This repository contains the code, frozen model artifacts, evaluation data, and simulated ESP32 proof-of-concept files associated with the manuscript **“A Lightweight Context-Aware Neural Offloading Strategy for IoT Edge Devices.”**
 
 ## Overview
 
-The method treats each task-offloading decision as a context-dependent cost-minimization problem over three execution options: local execution, partial offloading, and full offloading. The system context contains CPU utilization, network latency, task type, and network-condition feedback. Analytical latency and modeled energy-cost functions define the reference action costs, and a compact neural network learns to approximate those costs.
+The method treats task offloading as a context-dependent cost-minimization problem over three execution options: local execution, partial offloading, and full offloading. The input context contains CPU utilization, network latency, task type, and network-condition feedback. Analytical latency and modeled energy-cost functions define the reference action costs, and a compact neural network learns to estimate those costs.
 
-The selected network has a `4 -> 16 -> 16 -> 3` topology with 403 trainable parameters and 368 MACs per inference.
-
-After full INT8 quantization, the frozen deployment model occupies 2,776 bytes (2.71 KiB). On 7,500 held-out states, the INT8 policy achieves 99.17% action agreement with the analytical reference policy.
+The selected network is `4 -> 16 -> 16 -> 3`, with 403 trainable parameters and 368 MACs per inference. The final fully quantized INT8 model occupies 2,776 bytes (2.71 KiB) and achieves 99.17% action agreement with the analytical reference policy on 7,500 held-out states.
 
 ## Repository structure
 
 ```text
 scripts/
+  architecture_search.py
   train_offloading_model.py
   export_validate_fp32_tflite.py
   export_validate_int8_tflite.py
+  one_at_a_time_sensitivity.py
+  combined_sensitivity.py
+  weight_sensitivity.py
   generate_deployment_vectors.py
   generate_near_boundary_vectors.py
   generate_final_paper_figures.py
   generate_model_header.py
+
+models/
+  offloading_fp32.keras
+  offloading_fp32.tflite
+  offloading_int8.tflite
+
+results/
+  architecture_seed_results.csv
+  architecture_summary.csv
+  architecture_shortlist.csv
+  one_at_a_time_sensitivity.csv
+  combined_sensitivity.csv
+  weight_sensitivity.csv
+  held_out/
 
 deployment/esp32/
   sketch.ino
@@ -29,62 +45,71 @@ deployment/esp32/
   boundary_vectors.h
   near_boundary_vectors.h
   WOKWI_PROJECT.txt
-
-models/
-  offloading_int8.tflite
-
-results/
-  README.md
 ```
-
-The firmware includes `offloading_model.h` at compile time. Generate this header from the frozen INT8 model using `scripts/generate_model_header.py`; the generated header itself is not stored in the repository.
 
 ## Environment
 
-Create a Python environment and install the required packages:
+Install the required Python packages with:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Run the Python scripts from the repository root so that generated files are written to `outputs/`.
+See `ENVIRONMENT.md` for the environment metadata recoverable from the frozen artifacts and for commands to capture the original package versions if the original environment is still available.
 
-## Reproducing the model pipeline
+## Main workflow
 
-1. Train the selected network:
+Run scripts from the repository root.
+
+Architecture search:
+
+```bash
+python scripts/architecture_search.py
+```
+
+Train the selected deployment model:
 
 ```bash
 python scripts/train_offloading_model.py
 ```
 
-2. Export and validate the FP32 TensorFlow Lite model:
+Export and validate FP32 and INT8 TensorFlow Lite models:
 
 ```bash
 python scripts/export_validate_fp32_tflite.py
-```
-
-3. Export and validate the fully quantized INT8 model:
-
-```bash
 python scripts/export_validate_int8_tflite.py
 ```
 
-4. Generate the general deployment vectors and cases close to an INT8 decision tie:
+Run sensitivity analyses:
+
+```bash
+python scripts/one_at_a_time_sensitivity.py
+python scripts/combined_sensitivity.py
+python scripts/weight_sensitivity.py
+```
+
+Generate deployment vectors:
 
 ```bash
 python scripts/generate_deployment_vectors.py
 python scripts/generate_near_boundary_vectors.py
 ```
 
-The exact-tie validation header used in the proof-of-concept firmware is included under `deployment/esp32/`. Its original generator was not part of the supplied project files.
+The exact INT8 tie cases used in the proof-of-concept evaluation are included as `deployment/esp32/boundary_vectors.h`.
 
-5. Generate the C header from the frozen INT8 model before compiling the ESP32 firmware:
+Generate the C header for the frozen INT8 model before compiling the ESP32 firmware:
 
 ```bash
 python scripts/generate_model_header.py
 ```
 
-## Main reported results
+Generate the main evaluation figures:
+
+```bash
+python scripts/generate_final_paper_figures.py
+```
+
+## Main reported deployment results
 
 | Characteristic | Result |
 |---|---:|
@@ -93,19 +118,18 @@ python scripts/generate_model_header.py
 | MACs per inference | 368 |
 | INT8 model size | 2,776 B (2.71 KiB) |
 | INT8/reference-policy agreement | 99.17% |
+| Minimum successful tensor arena tested | 1,680 B |
 | Practical tensor arena | 2 KiB |
 | Simulated ESP32 model inference | ~0.854 ms |
 | Direct analytical decision | ~31.81 us |
 
-The modeled energy values are analytical energy-cost proxies rather than physical energy measurements. The ESP32 timing results are from a simulated proof-of-concept environment and should not be interpreted as physical-hardware power, energy, or end-to-end communication measurements.
+For the current three-action formulation, direct analytical evaluation is faster than neural inference. The neural model is evaluated as a compact learned representation of the analytical policy rather than as a faster substitute for the underlying equations.
 
-## Figures and sensitivity results
+The modeled energy values are analytical energy-cost proxies, not physical energy measurements. The ESP32 measurements are from a simulated proof-of-concept environment and should not be interpreted as physical-device power, energy, or end-to-end communication measurements.
 
-`scripts/generate_final_paper_figures.py` reproduces the main evaluation figures when the architecture-search and sensitivity CSV files are available. See `results/README.md` for the required filenames.
+## Reproducibility notes
 
-## Frozen deployment artifact
-
-The exact INT8 model used in the proof-of-concept firmware is included in `models/`. See `ARTIFACTS.md` for its SHA-256 hash and artifact notes.
+See `REPRODUCIBILITY_NOTES.md` for the architecture-search screening correction and other methodological details relevant to reproducing the final manuscript results.
 
 ## License
 
