@@ -25,7 +25,6 @@ scripts/
   generate_model_header.py
 
 models/
-  offloading_fp32.keras
   offloading_fp32.tflite
   offloading_int8.tflite
 
@@ -36,7 +35,6 @@ results/
   one_at_a_time_sensitivity.csv
   combined_sensitivity.csv
   weight_sensitivity.csv
-  held_out/
 
 deployment/esp32/
   sketch.ino
@@ -95,7 +93,7 @@ python scripts/generate_deployment_vectors.py
 python scripts/generate_near_boundary_vectors.py
 ```
 
-The exact INT8 tie cases used in the proof-of-concept evaluation are included as `deployment/esp32/boundary_vectors.h`.
+The exact INT8 tie cases used in the proof-of-concept evaluation are included as `deployment/esp32/boundary_vectors.h`. The supplied `generate_boundary_vectors.ipynb` generates the non-tied near-boundary set, so the original generator for the exact-tie set is not currently available in the repository.
 
 Generate the C header for the frozen INT8 model before compiling the ESP32 firmware:
 
