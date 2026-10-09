@@ -16,6 +16,4 @@ This directory contains the frozen numerical outputs used to reproduce the main 
 
 The sensitivity perturbations are systematic robustness scenarios, not empirical confidence intervals.
 
-## Held-out evaluation set
-
-`held_out/` contains the 7,500 normalized test states, analytical action-cost targets, and analytical reference actions used for final model evaluation.
+The 7,500-state held-out arrays are deterministic outputs of `scripts/train_offloading_model.py` and are not committed separately. Their verified hashes are recorded in `ARTIFACTS.md`.
