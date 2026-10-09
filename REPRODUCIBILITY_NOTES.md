@@ -19,3 +19,10 @@ The one-at-a-time, combined, and objective-weight sensitivity scripts use a fixe
 ## ESP32 proof of concept
 
 The Wokwi/ESP32 measurements validate firmware integration, numerical consistency, tensor-arena allocation, and model-inference timing in a simulated environment. They are not physical-device power or end-to-end communication measurements.
+
+
+## Exact INT8 tie-case generator
+
+The original source used to generate the frozen 30 exact INT8 tie cases was not recovered. The repository therefore includes `scripts/generate_exact_tie_vectors.py`, reconstructed from the supplied near-boundary generator and the frozen `boundary_vectors.h`.
+
+The reconstructed script selects held-out samples for which the two smallest raw INT8 outputs are equal (decision margin 0) and takes the first 30 cases in held-out-set order. This matches the documented frozen exact-tie set. The frozen header remains the authoritative artifact for the reported ESP32 consistency experiment.
