@@ -21,6 +21,7 @@ scripts/
   weight_sensitivity.py
   generate_deployment_vectors.py
   generate_near_boundary_vectors.py
+  generate_exact_tie_vectors.py
   generate_final_paper_figures.py
   generate_model_header.py
 
@@ -91,9 +92,10 @@ Generate deployment vectors:
 ```bash
 python scripts/generate_deployment_vectors.py
 python scripts/generate_near_boundary_vectors.py
+python scripts/generate_exact_tie_vectors.py
 ```
 
-The exact INT8 tie cases used in the proof-of-concept evaluation are included as `deployment/esp32/boundary_vectors.h`. The supplied `generate_boundary_vectors.ipynb` generates the non-tied near-boundary set, so the original generator for the exact-tie set is not currently available in the repository.
+The exact INT8 tie cases used in the proof-of-concept evaluation are included as `deployment/esp32/boundary_vectors.h`. The original exact-tie generator was not recovered, so `scripts/generate_exact_tie_vectors.py` is a reconstructed generator that reproduces the documented selection rule by taking the first 30 held-out cases with zero INT8 decision margin.
 
 Generate the C header for the frozen INT8 model before compiling the ESP32 firmware:
 
