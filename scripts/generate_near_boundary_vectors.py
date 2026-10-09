@@ -166,6 +166,7 @@ all_margins = np.asarray(
     dtype=np.int32
 )
 
+# Select the 30 smallest nonzero INT8 decision margins.
 nonzero_indices = np.where(
     all_margins > 0
 )[0]
