@@ -1,74 +1,103 @@
 # A Lightweight Context-Aware Neural Offloading Strategy for IoT Edge Devices
 
-This repository contains the code and deployment artifacts associated with the manuscript **“A Lightweight Context-Aware Neural Offloading Strategy for IoT Edge Devices.”**
+This repository contains the training, conversion, evaluation, and proof-of-concept deployment code associated with the manuscript **“A Lightweight Context-Aware Neural Offloading Strategy for IoT Edge Devices.”**
 
 ## Overview
 
-The method treats each task-offloading decision as a context-dependent cost-minimization problem over three execution options:
+The method treats each task-offloading decision as a context-dependent cost-minimization problem over three execution options: local execution, partial offloading, and full offloading. The system context contains CPU utilization, network latency, task type, and network-condition feedback. Analytical latency and modeled energy-cost functions define the reference action costs, and a compact neural network learns to approximate those costs.
 
-- local execution
-- partial offloading
-- full offloading
+The selected network has a `4 -> 16 -> 16 -> 3` topology with 403 trainable parameters and 368 MACs per inference.
 
-The system context contains CPU utilization, network latency, task type, and network-condition feedback. Analytical latency and modeled energy-cost functions define the reference action costs, and a compact neural network learns to approximate those costs.
+After full INT8 quantization, the frozen deployment model occupies 2,776 bytes (2.71 KiB). On 7,500 held-out states, the INT8 policy achieves 99.17% action agreement with the analytical reference policy.
 
-The selected network has the topology:
+## Repository structure
 
 ```text
-4 -> 16 -> 16 -> 3
+scripts/
+  train_offloading_model.py
+  export_validate_fp32_tflite.py
+  export_validate_int8_tflite.py
+  generate_deployment_vectors.py
+  generate_near_boundary_vectors.py
+  generate_final_paper_figures.py
+
+deployment/esp32/
+  sketch.ino
+  diagram.json
+  offloading_model.h
+  deployment_vectors.h
+  boundary_vectors.h
+  near_boundary_vectors.h
+  WOKWI_PROJECT.txt
+
+models/
+  offloading_int8.tflite
+
+results/
+  README.md
 ```
 
-It contains 403 trainable parameters and requires 368 MACs per inference.
+## Environment
 
-## Final Deployment Model
+Create a Python environment and install the required packages:
 
-The final model is fully quantized to INT8 for TensorFlow Lite for Microcontrollers.
+```bash
+pip install -r requirements.txt
+```
+
+Run the Python scripts from the repository root so that generated files are written to `outputs/`.
+
+## Reproducing the model pipeline
+
+1. Train the selected network:
+
+```bash
+python scripts/train_offloading_model.py
+```
+
+2. Export and validate the FP32 TensorFlow Lite model:
+
+```bash
+python scripts/export_validate_fp32_tflite.py
+```
+
+3. Export and validate the fully quantized INT8 model:
+
+```bash
+python scripts/export_validate_int8_tflite.py
+```
+
+4. Generate the general deployment vectors and cases close to an INT8 decision tie:
+
+```bash
+python scripts/generate_deployment_vectors.py
+python scripts/generate_near_boundary_vectors.py
+```
+
+The exact-tie header used in the proof-of-concept firmware is included under `deployment/esp32/`.
+
+## Main reported results
 
 | Characteristic | Result |
 |---|---:|
-| INT8 model size | 2,776 bytes (2.71 KiB) |
-| Parameters | 403 |
+| Selected architecture | `4 -> 16 -> 16 -> 3` |
+| Trainable parameters | 403 |
 | MACs per inference | 368 |
-| Held-out analytical-policy agreement | 99.17% |
+| INT8 model size | 2,776 B (2.71 KiB) |
+| INT8/reference-policy agreement | 99.17% |
 | Practical tensor arena | 2 KiB |
 | Simulated ESP32 model inference | ~0.854 ms |
+| Direct analytical decision | ~31.81 us |
 
-The ESP32 measurements are from a proof-of-concept simulation and should not be interpreted as physical-hardware power, energy, or end-to-end communication measurements.
+The modeled energy values are analytical energy-cost proxies rather than physical energy measurements. The ESP32 timing results are from a simulated proof-of-concept environment and should not be interpreted as physical-hardware power, energy, or end-to-end communication measurements.
 
-## Analytical Baseline
+## Figures and sensitivity results
 
-The same three-action analytical policy was also evaluated directly in the simulated ESP32 environment. Direct analytical evaluation required about 31.81 microseconds per decision, compared with about 853.53 microseconds for INT8 neural inference.
+`scripts/generate_final_paper_figures.py` reproduces the main evaluation figures when the architecture-search and sensitivity CSV files are available. See `results/README.md` for the required filenames.
 
-For the present cost formulation, direct analytical evaluation is faster. The neural model is therefore evaluated as a compact learned representation of the analytical policy rather than as a faster replacement for the underlying equations.
+## Frozen deployment artifact
 
-## Evaluation
-
-The repository is intended to support reproduction of the main experiments reported in the manuscript, including:
-
-- architecture search and model selection
-- standalone model training
-- FP32 TensorFlow Lite conversion
-- full INT8 quantization
-- analytical-reference and static-baseline evaluation
-- cost-model and objective-weight sensitivity analysis
-- simulated ESP32 proof-of-concept evaluation
-
-The modeled energy values used in the experiments are analytical energy-cost proxies, not physical energy measurements.
-
-## Repository Structure
-
-The final repository will organize the reproducibility material as follows:
-
-```text
-training/
-evaluation/
-deployment/
-models/
-results/
-figures/
-```
-
-Only the scripts and artifacts needed to reproduce or verify the reported experiments will be retained.
+The exact INT8 model used by the proof-of-concept firmware is included in `models/` and embedded in `deployment/esp32/offloading_model.h`. See `ARTIFACTS.md` for SHA-256 hashes.
 
 ## License
 
