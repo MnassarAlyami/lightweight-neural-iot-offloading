@@ -37,7 +37,6 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 def generate_states(num_samples, seed):
     """
     Generate the four-dimensional system state:
-
         C = CPU utilization (%)
         L = network latency (ms)
         T = task type
@@ -129,7 +128,6 @@ def create_dataset(num_samples, seed):
 def split_dataset(inputs, targets, seed):
     """
     Randomly split the complete dataset into:
-
         70% training
         15% validation
         15% testing
@@ -162,9 +160,9 @@ def build_model():
     """
 
     model = tf.keras.Sequential([
-        tf.keras.layers.Input(shape=(4), name="state"), 
-        tf.keras.layers.Dense(HIDDEN_WIDTH, activation="relu", name="hidden_1"), 
-        tf.keras.layers.Dense(HIDDEN_WIDTH, activation="relu", name="hidden_2"), 
+        tf.keras.layers.Input(shape=(4), name="state"),
+        tf.keras.layers.Dense(HIDDEN_WIDTH, activation="relu", name="hidden_1"),
+        tf.keras.layers.Dense(HIDDEN_WIDTH, activation="relu", name="hidden_2"),
         tf.keras.layers.Dense(3, activation="linear", name="action_costs")
     ])
     optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
@@ -193,8 +191,8 @@ def evaluate_policy(model, inputs, targets):
         "agreement": agreement,
         "mean_regret": np.mean(regret),
         "median_regret": np.median(regret),
-        "mean_normalized_regret": np.mean(normalized_regret), 
-        "median_normalized_regret": np.median(normalized_regret), 
+        "mean_normalized_regret": np.mean(normalized_regret),
+        "median_normalized_regret": np.median(normalized_regret),
         "predictions": predictions,
         "oracle_actions": oracle_actions,
         "predicted_actions": predicted_actions,
@@ -204,7 +202,6 @@ def evaluate_policy(model, inputs, targets):
 
 
 def main():
-
     print("=" * 60)
     print("Clean Offloading Model Training Pipeline")
     print("=" * 60)
