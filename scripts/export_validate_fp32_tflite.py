@@ -18,7 +18,6 @@ EPSILON = 1e-8
 
 
 def load_artifacts():
-
     print("Loading frozen deployment artifacts...")
     model = tf.keras.models.load_model(KERAS_MODEL_PATH)
     x_test = np.load(X_TEST_PATH).astype(np.float32)
@@ -30,7 +29,6 @@ def load_artifacts():
 
 
 def convert_to_fp32_tflite(model):
-
     print("\nConverting Keras model to FP32 TFLite...")
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
     tflite_model = converter.convert()
@@ -44,7 +42,6 @@ def convert_to_fp32_tflite(model):
 
 
 def create_interpreter():
-
     interpreter = tf.lite.Interpreter(model_path=TFLITE_MODEL_PATH)
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
@@ -63,13 +60,11 @@ def create_interpreter():
 
 
 def run_tflite_inference(interpreter, input_details, output_details, x_test):
-
     input_index = input_details[0]["index"]
     output_index = output_details[0]["index"]
     predictions = []
     print("\nRunning FP32 TFLite inference " f"on {len(x_test)} test samples...")
     for sample in x_test:
-
         sample = np.expand_dims(sample, axis=0).astype(np.float32)
         interpreter.set_tensor(input_index, sample)
         interpreter.invoke()
@@ -80,7 +75,6 @@ def run_tflite_inference(interpreter, input_details, output_details, x_test):
 
 
 def evaluate_equivalence(keras_model, x_test, y_test, oracle_actions, tflite_predictions):
-
     print("\nGenerating Keras FP32 reference predictions...")
     keras_predictions = keras_model.predict(x_test, batch_size=64, verbose=0)
     keras_actions = np.argmin(keras_predictions, axis=1)
@@ -112,12 +106,9 @@ def evaluate_equivalence(keras_model, x_test, y_test, oracle_actions, tflite_pre
     print(f"Median normalized regret : {np.median(normalized_regret):.10e}")
     disagreement_indices = np.where(keras_actions != tflite_actions)[0]
     if len(disagreement_indices) > 0:
-
-        print("\nWARNING: Keras and TFLite selected " "different actions.")
+        print("\nWARNING: Keras and TFLite selected different actions.")
         print("First disagreement indices:", disagreement_indices[:10])
-
     else:
-
         print(
             "\nPASS: FP32 Keras and FP32 TFLite "
             "selected identical actions for every "
@@ -135,7 +126,6 @@ def evaluate_equivalence(keras_model, x_test, y_test, oracle_actions, tflite_pre
 
 
 def save_validation_outputs(results):
-
     np.save(os.path.join(OUTPUT_DIR, "fp32_tflite_predictions.npy"), results["tflite_predictions"])
     np.save(os.path.join(OUTPUT_DIR, "fp32_tflite_actions.npy"), results["tflite_actions"])
     print("\nSaved validation outputs:")
@@ -144,7 +134,6 @@ def save_validation_outputs(results):
 
 
 def main():
-
     print("=" * 65)
     print("FP32 TFLite Conversion and Validation")
     print("=" * 65)
