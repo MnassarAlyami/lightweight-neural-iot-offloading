@@ -14,7 +14,6 @@ torch.set_num_threads(1)
 
 
 def set_seed(seed):
-
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -44,7 +43,6 @@ NETWORK_LATENCY_MAX = 250.0
 
 
 def normalize_states(states):
-
     x = states.copy().astype(np.float32)
     x[:, 0] /= CPU_MAX
     x[:, 1] /= NETWORK_LATENCY_MAX
@@ -52,7 +50,6 @@ def normalize_states(states):
 
 
 def generate_contexts(num_samples, seed):
-
     rng = np.random.default_rng(seed)
     cpu = rng.uniform(0, 100, num_samples)
     network_latency = rng.uniform(5, 250, num_samples)
@@ -65,7 +62,6 @@ FEEDBACK_ENERGY_PENALTY = 0.20
 
 
 def calculate_costs(states):
-
     cpu = states[:, 0]
     network_latency = states[:, 1]
     feedback = states[:, 3]
@@ -86,7 +82,6 @@ ENERGY_SCALE = 80.0
 
 
 def calculate_objective(states):
-
     latency, energy = calculate_costs(states)
     task_type = states[:, 2]
     latency_normalized = latency / LATENCY_SCALE
@@ -106,32 +101,27 @@ def calculate_objective(states):
 
 
 def reference_policy(states):
-
     objective = calculate_objective(states)
     return np.argmin(objective, axis=1)
 
 
 def create_dataset(num_samples, seed):
-
     states = generate_contexts(num_samples, seed)
     normalized_states = normalize_states(states)
     objective = calculate_objective(states)
     return (
-        torch.tensor(normalized_states, dtype=torch.float32), 
+        torch.tensor(normalized_states, dtype=torch.float32),
         torch.tensor(objective, dtype=torch.float32)
     )
 
 
 class TinyMLNetwork(nn.Module):
-
     def __init__(self, hidden_width, num_blocks):
-
         super().__init__()
         layers = []
         layers.append(nn.Linear(4, hidden_width))
         layers.append(nn.ReLU())
         for _ in range(num_blocks):
-
             layers.append(nn.Linear(hidden_width, hidden_width))
             layers.append(nn.ReLU())
 
@@ -140,22 +130,18 @@ class TinyMLNetwork(nn.Module):
         self.network = nn.Sequential(*layers)
 
     def forward(self, x):
-
         return self.network(x)
 
 
 def train_model(model, states, objective_targets, seed):
-
     set_seed(seed)
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     loss_function = nn.MSELoss()
     model.train()
     n = len(states)
     for epoch in range(TRAINING_EPOCHS):
-
         permutation = torch.randperm(n)
         for start in range(0, n, BATCH_SIZE):
-
             indices = permutation[start:start + BATCH_SIZE]
             x = states[indices]
             target = objective_targets[indices]
@@ -169,12 +155,10 @@ def train_model(model, states, objective_targets, seed):
 
 
 def evaluate_model(model, states_raw):
-
     model.eval()
     states_normalized = normalize_states(states_raw)
     x = torch.tensor(states_normalized, dtype=torch.float32)
     with torch.no_grad():
-
         predicted_objective = model(x) .cpu() .numpy()
 
     predicted_actions = np.argmin(predicted_objective, axis=1)
@@ -189,15 +173,14 @@ def evaluate_model(model, states_raw):
     selected_latency = latency[indices, predicted_actions]
     selected_energy = energy[indices, predicted_actions]
     return {
-
         "reference_agreement":
-            np.mean(predicted_actions == oracle_actions), 
+            np.mean(predicted_actions == oracle_actions),
 
         "mean_objective":
-            np.mean(selected_objective), 
+            np.mean(selected_objective),
 
         "oracle_objective":
-            np.mean(oracle_objective), 
+            np.mean(oracle_objective),
 
         "mean_regret":
             np.mean(regret),
@@ -206,25 +189,25 @@ def evaluate_model(model, states_raw):
             np.median(regret),
 
         "mean_normalized_regret":
-            np.mean(normalized_regret), 
+            np.mean(normalized_regret),
 
         "mean_latency":
-            np.mean(selected_latency), 
+            np.mean(selected_latency),
 
         "median_latency":
-            np.median(selected_latency), 
+            np.median(selected_latency),
 
         "mean_energy":
-            np.mean(selected_energy), 
+            np.mean(selected_energy),
 
         "median_energy":
-            np.median(selected_energy), 
+            np.median(selected_energy),
 
         "local_fraction":
-            np.mean(predicted_actions == 0), 
+            np.mean(predicted_actions == 0),
 
         "partial_fraction":
-            np.mean(predicted_actions == 1), 
+            np.mean(predicted_actions == 1),
 
         "full_fraction":
             np.mean(predicted_actions == 2)
@@ -232,7 +215,6 @@ def evaluate_model(model, states_raw):
 
 
 def evaluate_int8_screening(model, states_raw):
-
     """
     Screening only.
     Final validation must use full-integer TFLite/TFLite Micro.
@@ -241,14 +223,12 @@ def evaluate_int8_screening(model, states_raw):
     model.eval()
     x = torch.tensor(normalize_states(states_raw), dtype=torch.float32)
     with torch.no_grad():
-
         fp32_output = model(x)
         fp32_actions = torch.argmin(fp32_output, dim=1).cpu().numpy()
 
     quantized_model = torch.quantization .quantize_dynamic(model, {nn.Linear}, dtype=torch.qint8)
     quantized_model.eval()
     with torch.no_grad():
-
         int8_output = quantized_model(x)
         int8_actions = torch.argmin(int8_output, dim=1).cpu().numpy()
 
@@ -256,16 +236,13 @@ def evaluate_int8_screening(model, states_raw):
 
 
 def profile_model(model):
-
     parameters = sum(p.numel() for p in model.parameters())
     bias_count = sum(p.numel() for name, p in model.named_parameters() if "bias" in name)
     fp32_bytes = parameters * 4
     int8_bytes = parameters + bias_count * 4
     macs = 0
     for module in model.modules():
-
         if isinstance(module, nn.Linear):
-
             macs += module.in_features * module.out_features
 
     # Activation screening estimate.
@@ -274,15 +251,11 @@ def profile_model(model):
     hooks = []
 
     def hook(module, inputs, output):
-
         if isinstance(output, torch.Tensor):
-
             activation_sizes.append(output.numel())
 
     for module in model.modules():
-
         if isinstance(module, nn.Linear):
-
             hooks.append(module.register_forward_hook(hook))
 
     dummy = torch.zeros(1, 4)
@@ -294,14 +267,11 @@ def profile_model(model):
 
     if activation_sizes:
         peak_elements = max(activation_sizes)
-
     else:
-
         peak_elements = 0
 
     peak_activation_bytes = peak_elements * 2 * 4
     return {
-
         "parameters":
             parameters,
 
@@ -323,7 +293,6 @@ def profile_model(model):
 
 
 def passes_constraints(profile):
-
     return (
         profile["estimated_int8_model_bytes"]
         <=
@@ -340,7 +309,6 @@ def passes_constraints(profile):
 
 
 def main():
-
     output_dir = "results"
     os.makedirs(output_dir, exist_ok=True)
     train_states, train_objective = create_dataset(NUM_TRAIN_SAMPLES, 100)
@@ -348,19 +316,15 @@ def main():
     test_states_raw = generate_contexts(NUM_TEST_SAMPLES, 300)
     results = []
     for width in HIDDEN_WIDTHS:
-
         for blocks in NUM_BLOCKS:
-
             prototype = TinyMLNetwork(width, blocks)
             profile = profile_model(prototype)
             if not passes_constraints(profile):
-
                 print(f"SKIP W={width}, B={blocks}")
                 continue
 
             print(f"\nArchitecture W={width}, B={blocks}")
             for seed in SEEDS:
-
                 print(f" Seed {seed}")
                 model = TinyMLNetwork(width, blocks)
                 model = train_model(model, train_states, train_objective, seed)
@@ -368,7 +332,6 @@ def main():
                 test_metrics = evaluate_model(model, test_states_raw)
                 int8_agreement = evaluate_int8_screening(model, test_states_raw)
                 results.append({
-
                     "hidden_width":
                         width,
 
@@ -380,49 +343,49 @@ def main():
 
                     **profile,
                     "validation_reference_agreement":
-                        validation_metrics["reference_agreement"], 
+                        validation_metrics["reference_agreement"],
 
                     "validation_mean_regret":
-                        validation_metrics["mean_regret"], 
+                        validation_metrics["mean_regret"],
 
                     "test_reference_agreement":
-                        test_metrics["reference_agreement"], 
+                        test_metrics["reference_agreement"],
 
                     "mean_objective":
-                        test_metrics["mean_objective"], 
+                        test_metrics["mean_objective"],
 
                     "oracle_objective":
-                        test_metrics["oracle_objective"], 
+                        test_metrics["oracle_objective"],
 
                     "mean_regret":
-                        test_metrics["mean_regret"], 
+                        test_metrics["mean_regret"],
 
                     "median_regret":
-                        test_metrics["median_regret"], 
+                        test_metrics["median_regret"],
 
                     "mean_normalized_regret":
-                        test_metrics["mean_normalized_regret"], 
+                        test_metrics["mean_normalized_regret"],
 
                     "mean_latency":
-                        test_metrics["mean_latency"], 
+                        test_metrics["mean_latency"],
 
                     "median_latency":
-                        test_metrics["median_latency"], 
+                        test_metrics["median_latency"],
 
                     "mean_energy":
-                        test_metrics["mean_energy"], 
+                        test_metrics["mean_energy"],
 
                     "median_energy":
-                        test_metrics["median_energy"], 
+                        test_metrics["median_energy"],
 
                     "local_fraction":
-                        test_metrics["local_fraction"], 
+                        test_metrics["local_fraction"],
 
                     "partial_fraction":
-                        test_metrics["partial_fraction"], 
+                        test_metrics["partial_fraction"],
 
                     "full_fraction":
-                        test_metrics["full_fraction"], 
+                        test_metrics["full_fraction"],
 
                     "fp32_int8_action_agreement":
                         int8_agreement
@@ -434,25 +397,24 @@ def main():
         results_df
         .groupby(["hidden_width", "num_blocks"])
         .agg(
-
-            test_reference_agreement_mean=("test_reference_agreement", "mean"), 
-            test_reference_agreement_std=("test_reference_agreement", "std"), 
-            mean_objective_mean=("mean_objective", "mean"), 
-            oracle_objective_mean=("oracle_objective", "mean"), 
-            mean_regret_mean=("mean_regret", "mean"), 
-            mean_regret_std=("mean_regret", "std"), 
-            mean_normalized_regret=("mean_normalized_regret", "mean"), 
-            mean_latency=("mean_latency", "mean"), 
-            median_latency=("median_latency", "mean"), 
-            mean_energy=("mean_energy", "mean"), 
-            median_energy=("median_energy", "mean"), 
-            int8_action_agreement_mean=("fp32_int8_action_agreement", "mean"), 
-            int8_action_agreement_std=("fp32_int8_action_agreement", "std"), 
-            int8_action_agreement_min=("fp32_int8_action_agreement", "min"), 
-            test_reference_agreement_min=("test_reference_agreement", "min"), 
-            parameters=("parameters", "first"), 
-            estimated_int8_model_bytes=("estimated_int8_model_bytes", "first"), 
-            peak_activation_bytes=("peak_activation_bytes", "first"), 
+            test_reference_agreement_mean=("test_reference_agreement", "mean"),
+            test_reference_agreement_std=("test_reference_agreement", "std"),
+            mean_objective_mean=("mean_objective", "mean"),
+            oracle_objective_mean=("oracle_objective", "mean"),
+            mean_regret_mean=("mean_regret", "mean"),
+            mean_regret_std=("mean_regret", "std"),
+            mean_normalized_regret=("mean_normalized_regret", "mean"),
+            mean_latency=("mean_latency", "mean"),
+            median_latency=("median_latency", "mean"),
+            mean_energy=("mean_energy", "mean"),
+            median_energy=("median_energy", "mean"),
+            int8_action_agreement_mean=("fp32_int8_action_agreement", "mean"),
+            int8_action_agreement_std=("fp32_int8_action_agreement", "std"),
+            int8_action_agreement_min=("fp32_int8_action_agreement", "min"),
+            test_reference_agreement_min=("test_reference_agreement", "min"),
+            parameters=("parameters", "first"),
+            estimated_int8_model_bytes=("estimated_int8_model_bytes", "first"),
+            peak_activation_bytes=("peak_activation_bytes", "first"),
             macs=("macs", "first")
         )
         .reset_index()
@@ -482,7 +444,6 @@ def main():
     print(f"Architectures satisfying all final criteria: {len(shortlist)}")
     print("\nSmallest qualifying architectures:")
     if len(shortlist) > 0:
-
         print(
             shortlist[
                 [
@@ -499,11 +460,8 @@ def main():
                 index=False
             )
         )
-
     else:
-
-        print("No architecture satisfied " "the selected thresholds.")
+        print("No architecture satisfied the selected thresholds.")
 
 if __name__ == "__main__":
-
     main()
