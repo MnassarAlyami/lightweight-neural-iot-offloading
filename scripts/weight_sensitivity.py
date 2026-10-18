@@ -60,7 +60,6 @@ nominal_actions = np.argmin(J_nominal, axis=1)
 
 
 def evaluate(name, rt_weights, dt_weights):
-
     J = objective(rt_weights, dt_weights)
     actions = np.argmin(J, axis=1)
     idx = np.arange(N_SAMPLES)
@@ -101,17 +100,17 @@ def evaluate(name, rt_weights, dt_weights):
 
 # All weight pairs sum to 1; scenarios test local and wider sensitivity.
 experiments = [
-    ("nominal", (0.75, 0.25), (0.50, 0.50)), 
-    ("RT_70_30", (0.70, 0.30), (0.50, 0.50)), 
-    ("RT_80_20", (0.80, 0.20), (0.50, 0.50)), 
-    ("RT_65_35", (0.65, 0.35), (0.50, 0.50)), 
-    ("RT_85_15", (0.85, 0.15), (0.50, 0.50)), 
-    ("DT_45_55", (0.75, 0.25), (0.45, 0.55)), 
-    ("DT_55_45", (0.75, 0.25), (0.55, 0.45)), 
-    ("DT_40_60", (0.75, 0.25), (0.40, 0.60)), 
-    ("DT_60_40", (0.75, 0.25), (0.60, 0.40)), 
-    ("latency_emphasis", (0.85, 0.15), (0.60, 0.40)), 
-    ("energy_emphasis", (0.65, 0.35), (0.40, 0.60)), 
+    ("nominal", (0.75, 0.25), (0.50, 0.50)),
+    ("RT_70_30", (0.70, 0.30), (0.50, 0.50)),
+    ("RT_80_20", (0.80, 0.20), (0.50, 0.50)),
+    ("RT_65_35", (0.65, 0.35), (0.50, 0.50)),
+    ("RT_85_15", (0.85, 0.15), (0.50, 0.50)),
+    ("DT_45_55", (0.75, 0.25), (0.45, 0.55)),
+    ("DT_55_45", (0.75, 0.25), (0.55, 0.45)),
+    ("DT_40_60", (0.75, 0.25), (0.40, 0.60)),
+    ("DT_60_40", (0.75, 0.25), (0.60, 0.40)),
+    ("latency_emphasis", (0.85, 0.15), (0.60, 0.40)),
+    ("energy_emphasis", (0.65, 0.35), (0.40, 0.60)),
 ]
 
 results = [evaluate(name, rt, dt) for name, rt, dt in experiments]
