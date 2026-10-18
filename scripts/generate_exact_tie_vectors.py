@@ -48,7 +48,6 @@ all_actions = []
 all_margins = []
 
 for x in x_test:
-
     q_input = np.round(x / input_scale + input_zero_point)
     q_input = np.clip(q_input, -128, 127).astype(np.int8)
     interpreter.set_tensor(input_details["index"], q_input.reshape(1, 4))
@@ -98,7 +97,6 @@ boundary_margins = all_margins[boundary_indices]
 objective_margins = []
 
 for idx in boundary_indices:
-
     costs = np.sort(y_test[idx])
     margin = float(costs[1] - costs[0])
     objective_margins.append(margin)
@@ -110,7 +108,6 @@ print("SELECTED EXACT INT8 TIE CASES")
 print("=" * 75)
 
 for i in range(NUM_BOUNDARY_VECTORS):
-
     idx = boundary_indices[i]
     print("\n" + "-" * 75)
     print(f"Boundary vector {i + 1} (test index {idx})")
@@ -140,7 +137,7 @@ boundary_oracle_agreement = np.mean(boundary_actions == boundary_oracle_actions)
 print(f"INT8/oracle agreement : {boundary_oracle_agreement * 100:.4f}%")
 
 np.savez(
-    os.path.join(OUTPUT_DIR, "boundary_vectors.npz"), 
+    os.path.join(OUTPUT_DIR, "boundary_vectors.npz"),
     test_indices=boundary_indices,
     normalized_inputs=boundary_inputs_float,
     quantized_inputs=boundary_inputs_int8,
@@ -155,27 +152,26 @@ np.savez(
 header_path = os.path.join(OUTPUT_DIR, "boundary_vectors.h")
 
 with open(header_path, "w") as f:
-
     f.write("#ifndef BOUNDARY_VECTORS_H\n")
     f.write("#define BOUNDARY_VECTORS_H\n\n")
     f.write("#include <stdint.h>\n\n")
     f.write(f"#define NUM_BOUNDARY_VECTORS {NUM_BOUNDARY_VECTORS}\n\n")
-    f.write("const int8_t BOUNDARY_INPUTS" "[NUM_BOUNDARY_VECTORS][4] = {\n")
+    f.write("const int8_t BOUNDARY_INPUTS[NUM_BOUNDARY_VECTORS][4] = {\n")
     for row in boundary_inputs_int8:
         values = ", ".join(str(int(v)) for v in row)
         f.write(f" {{{values}}}, \n")
 
     f.write("};\n\n")
-    f.write("const int8_t BOUNDARY_EXPECTED_OUTPUTS" "[NUM_BOUNDARY_VECTORS][3] = {\n")
+    f.write("const int8_t BOUNDARY_EXPECTED_OUTPUTS[NUM_BOUNDARY_VECTORS][3] = {\n")
     for row in boundary_outputs_int8:
         values = ", ".join(str(int(v)) for v in row)
         f.write(f" {{{values}}}, \n")
 
     f.write("};\n\n")
-    f.write("const int8_t BOUNDARY_EXPECTED_ACTIONS" "[NUM_BOUNDARY_VECTORS] = {\n ")
+    f.write("const int8_t BOUNDARY_EXPECTED_ACTIONS[NUM_BOUNDARY_VECTORS] = {\n ")
     f.write(", ".join(str(int(v)) for v in boundary_actions))
     f.write("\n};\n\n")
-    f.write("const int16_t BOUNDARY_MARGINS" "[NUM_BOUNDARY_VECTORS] = {\n ")
+    f.write("const int16_t BOUNDARY_MARGINS[NUM_BOUNDARY_VECTORS] = {\n ")
     f.write(", ".join(str(int(v)) for v in boundary_margins))
     f.write("\n};\n\n")
     f.write("#endif // BOUNDARY_VECTORS_H\n")
