@@ -93,7 +93,6 @@ void runValidationSet(
     int max_raw_difference = 0;
 
     for (int i = 0; i < num_vectors; i++) {
-
         int8_t actual[3];
 
         if (!runInference(test_inputs[i], actual)) {
@@ -105,7 +104,6 @@ void runValidationSet(
         bool vector_exact = true;
 
         for (int j = 0; j < 3; j++) {
-
             int difference = abs((int)actual[j] - (int)expected_outputs[i][j]);
 
             if (difference == 0) {
@@ -132,7 +130,6 @@ void runValidationSet(
         }
 
         if (!vector_exact || actual_action != expected_action) {
-
             Serial.println();
 
             Serial.print("Vector ");
@@ -202,7 +199,6 @@ void runValidationSet(
 }
 
 void printTensorInformation() {
-
     Serial.println();
     Serial.println("============================================================");
     Serial.println("TENSOR INFORMATION");
@@ -287,7 +283,6 @@ int analyticalDecision(float C, float L, int T, int F) {
 }
 
 double benchmarkInference() {
-
     constexpr int WARMUP_RUNS = 100;
     constexpr int MEASURED_RUNS = 1000;
 
@@ -296,7 +291,6 @@ double benchmarkInference() {
     }
 
     for (int i = 0; i < WARMUP_RUNS; i++) {
-
         if (interpreter->Invoke() != kTfLiteOk) {
             Serial.println("Warm-up Invoke() failed.");
 
@@ -309,7 +303,6 @@ double benchmarkInference() {
     uint32_t maximum_time = 0;
 
     for (int i = 0; i < MEASURED_RUNS; i++) {
-
         uint32_t start_time = micros();
 
         if (interpreter->Invoke() != kTfLiteOk) {
@@ -336,7 +329,6 @@ double benchmarkInference() {
     uint32_t batch_start = micros();
 
     for (int i = 0; i < MEASURED_RUNS; i++) {
-
         if (interpreter->Invoke() != kTfLiteOk) {
             Serial.println("Batch Invoke() failed.");
 
@@ -380,13 +372,11 @@ double benchmarkInference() {
 }
 
 double benchmarkAnalyticalPolicy() {
-
     constexpr int WARMUP_RUNS = 1000;
     constexpr int INDIVIDUAL_RUNS = 1000;
     constexpr int BATCH_RUNS = 100000;
 
     for (int i = 0; i < WARMUP_RUNS; i++) {
-
         int idx = i % NUM_ANALYTICAL_STATES;
 
         analytical_action_sink =
@@ -403,7 +393,6 @@ double benchmarkAnalyticalPolicy() {
     uint32_t maximum_time = 0;
 
     for (int i = 0; i < INDIVIDUAL_RUNS; i++) {
-
         int idx = i % NUM_ANALYTICAL_STATES;
 
         uint32_t start_time = micros();
@@ -434,7 +423,6 @@ double benchmarkAnalyticalPolicy() {
     uint32_t batch_start = micros();
 
     for (int i = 0; i < BATCH_RUNS; i++) {
-
         int idx = i % NUM_ANALYTICAL_STATES;
 
         analytical_action_sink =
@@ -521,7 +509,6 @@ void printTimingComparison(double neural_batch_mean, double analytical_batch_mea
 }
 
 void setup() {
-
     Serial.begin(115200);
 
     delay(1000);
@@ -534,7 +521,6 @@ void setup() {
     model = tflite::GetModel(offloading_model);
 
     if (model->version() != TFLITE_SCHEMA_VERSION) {
-
         Serial.print("Model schema version: ");
 
         Serial.println(model->version());
@@ -551,7 +537,6 @@ void setup() {
         resolver;
 
     if (resolver.AddFullyConnected() != kTfLiteOk) {
-
         Serial.println("AddFullyConnected() failed.");
 
         return;
@@ -566,7 +551,6 @@ void setup() {
     TfLiteStatus allocate_status = interpreter->AllocateTensors();
 
     if (allocate_status != kTfLiteOk) {
-
         Serial.println("AllocateTensors() FAILED.");
 
         return;
@@ -585,14 +569,12 @@ void setup() {
     output = interpreter->output(0);
 
     if (input == nullptr || output == nullptr) {
-
         Serial.println("Failed to obtain tensors.");
 
         return;
     }
 
     if (input->type != kTfLiteInt8 || output->type != kTfLiteInt8) {
-
         Serial.println("ERROR: Expected INT8 input/output tensors.");
 
         return;
