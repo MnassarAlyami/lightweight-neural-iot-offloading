@@ -120,7 +120,7 @@ ax.axhline(99.0, linestyle="--", linewidth=1.0, label="99% reference-agreement t
 
 ax.annotate(
     "Selected\n(403 parameters)",
-    xy=(selected["parameters"], selected["agreement_mean"] * 100), 
+    xy=(selected["parameters"], selected["agreement_mean"] * 100),
     xytext=(35, -42),
     textcoords="offset points",
     arrowprops=dict(arrowstyle="->", linewidth=0.8)
@@ -197,7 +197,7 @@ oracle_agreement = np.mean(recomputed_oracle == oracle_actions)
 print("Recomputed/saved oracle agreement:", f"{oracle_agreement * 100:.6f}%")
 
 if oracle_agreement < 0.999999:
-    raise RuntimeError("Oracle mismatch detected. " "Do not generate the final figures.")
+    raise RuntimeError("Oracle mismatch detected. Do not generate the final figures.")
 
 baseline_actions = np.where(cpu > 70.0, 2, 0).astype(int)
 
@@ -218,7 +218,6 @@ results = {}
 oracle_objective = select_values(objective_matrix, oracle_actions)
 
 for name, actions in policies.items():
-
     latency = select_values(latency_matrix, actions)
     energy = select_values(energy_matrix, actions)
     objective = select_values(objective_matrix, actions)
@@ -234,7 +233,6 @@ for name, actions in policies.items():
 summary_rows = []
 
 for name, r in results.items():
-
     actions = r["actions"]
     summary_rows.append({
         "Policy": name,
@@ -317,7 +315,6 @@ width = 0.24
 fig, ax = plt.subplots(figsize=(6.8, 3.8))
 
 for i, policy_name in enumerate(policy_names):
-
     offset = (i - (len(policy_names) - 1) / 2) * width
     bars = ax.bar(x + offset, action_percentages[i], width, label=policy_name)
     for bar, value in zip(bars, action_percentages[i]):
