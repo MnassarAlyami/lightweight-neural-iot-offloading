@@ -27,7 +27,6 @@ states = np.column_stack([cpu, network_latency, task_type, feedback])
 
 
 def calculate_costs(states, E1, E2, alpha_f, beta_f):
-
     C = states[:, 0]
     L_net = states[:, 1]
     T = states[:, 2].astype(int)
@@ -55,7 +54,6 @@ nominal_actions = np.argmin(J_nominal, axis=1)
 
 
 def evaluate_configuration(name, parameters):
-
     J = calculate_costs(states, **parameters)
     actions = np.argmin(J, axis=1)
     agreement = np.mean(actions == nominal_actions)
@@ -95,7 +93,6 @@ def evaluate_configuration(name, parameters):
 
 
 def scaled_parameters(E1_factor=1.0, E2_factor=1.0, alpha_factor=1.0, beta_factor=1.0):
-
     return {
         "E1":
             NOMINAL["E1"] * E1_factor,
@@ -112,30 +109,29 @@ def scaled_parameters(E1_factor=1.0, E2_factor=1.0, alpha_factor=1.0, beta_facto
 
 # Structured perturbation scenarios; not empirical confidence intervals.
 experiments = [
-    ("nominal", scaled_parameters()), 
-    ("all_-20%", scaled_parameters(0.8, 0.8, 0.8, 0.8)), 
-    ("all_+20%", scaled_parameters(1.2, 1.2, 1.2, 1.2)), 
-    ("all_-40%", scaled_parameters(0.6, 0.6, 0.6, 0.6)), 
-    ("all_+40%", scaled_parameters(1.4, 1.4, 1.4, 1.4)), 
-    ("E1_low_E2_high_20", scaled_parameters(E1_factor=0.8, E2_factor=1.2)), 
-    ("E1_high_E2_low_20", scaled_parameters(E1_factor=1.2, E2_factor=0.8)), 
-    ("E1_low_E2_high_40", scaled_parameters(E1_factor=0.6, E2_factor=1.4)), 
-    ("E1_high_E2_low_40", scaled_parameters(E1_factor=1.4, E2_factor=0.6)), 
-    ("feedback_-40%", scaled_parameters(alpha_factor=0.6, beta_factor=0.6)), 
-    ("feedback_+40%", scaled_parameters(alpha_factor=1.4, beta_factor=1.4)), 
-    ("alpha_low_beta_high", scaled_parameters(alpha_factor=0.6, beta_factor=1.4)), 
-    ("alpha_high_beta_low", scaled_parameters(alpha_factor=1.4, beta_factor=0.6)), 
+    ("nominal", scaled_parameters()),
+    ("all_-20%", scaled_parameters(0.8, 0.8, 0.8, 0.8)),
+    ("all_+20%", scaled_parameters(1.2, 1.2, 1.2, 1.2)),
+    ("all_-40%", scaled_parameters(0.6, 0.6, 0.6, 0.6)),
+    ("all_+40%", scaled_parameters(1.4, 1.4, 1.4, 1.4)),
+    ("E1_low_E2_high_20", scaled_parameters(E1_factor=0.8, E2_factor=1.2)),
+    ("E1_high_E2_low_20", scaled_parameters(E1_factor=1.2, E2_factor=0.8)),
+    ("E1_low_E2_high_40", scaled_parameters(E1_factor=0.6, E2_factor=1.4)),
+    ("E1_high_E2_low_40", scaled_parameters(E1_factor=1.4, E2_factor=0.6)),
+    ("feedback_-40%", scaled_parameters(alpha_factor=0.6, beta_factor=0.6)),
+    ("feedback_+40%", scaled_parameters(alpha_factor=1.4, beta_factor=1.4)),
+    ("alpha_low_beta_high", scaled_parameters(alpha_factor=0.6, beta_factor=1.4)),
+    ("alpha_high_beta_low", scaled_parameters(alpha_factor=1.4, beta_factor=0.6)),
 ]
 
 results = []
 
 for name, parameters in experiments:
-
     result = evaluate_configuration(name, parameters)
     results.append(result)
 
 print("=" * 125)
-print("COMBINED COST-MODEL " "SENSITIVITY ANALYSIS")
+print("COMBINED COST-MODEL SENSITIVITY ANALYSIS")
 print("=" * 125)
 
 print(
@@ -151,7 +147,6 @@ print(
 print("-" * 125)
 
 for r in results:
-
     print(
         f"{r['configuration']:<25}"
         f"{100*r['policy_agreement']:>11.3f}%"
@@ -169,7 +164,6 @@ csv_path = RESULTS_DIR / "combined_sensitivity.csv"
 fieldnames = list(results[0].keys())
 
 with open(csv_path, "w", newline="") as f:
-
     writer = csv.DictWriter(f, fieldnames=fieldnames)
     writer.writeheader()
     writer.writerows(results)
