@@ -39,7 +39,6 @@ selected_actions = []
 selected_oracle_actions = []
 
 for idx in indices:
-
     x = x_test[idx]
     q_input = np.round(x / input_scale + input_zero_point)
     q_input = np.clip(q_input, -128, 127).astype(np.int8)
@@ -86,7 +85,6 @@ print(f"Output scale : {output_scale}")
 print(f"Output zero point : {output_zero_point}")
 
 for i in range(NUM_VECTORS):
-
     print("\n" + "-" * 75)
     print(f"Vector {i + 1} (test index {indices[i]})")
     print("Normalized input :", normalized_inputs[i])
@@ -97,7 +95,7 @@ for i in range(NUM_VECTORS):
     print("Oracle action :", selected_oracle_actions[i])
 
 np.savez(
-    os.path.join(OUTPUT_DIR, "deployment_vectors.npz"), 
+    os.path.join(OUTPUT_DIR, "deployment_vectors.npz"),
     test_indices=indices,
     normalized_inputs=normalized_inputs,
     quantized_inputs=quantized_inputs,
@@ -110,26 +108,23 @@ np.savez(
 header_path = os.path.join(OUTPUT_DIR, "deployment_vectors.h")
 
 with open(header_path, "w") as f:
-
     f.write("#ifndef DEPLOYMENT_VECTORS_H\n")
     f.write("#define DEPLOYMENT_VECTORS_H\n\n")
     f.write("#include <stdint.h>\n\n")
     f.write(f"#define NUM_TEST_VECTORS {NUM_VECTORS}\n\n")
-    f.write("const int8_t TEST_INPUTS" "[NUM_TEST_VECTORS][4] = {\n")
+    f.write("const int8_t TEST_INPUTS[NUM_TEST_VECTORS][4] = {\n")
     for row in quantized_inputs:
-
         values = ", ".join(str(int(v)) for v in row)
         f.write(f" {{{values}}}, \n")
 
     f.write("};\n\n")
-    f.write("const int8_t EXPECTED_OUTPUTS" "[NUM_TEST_VECTORS][3] = {\n")
+    f.write("const int8_t EXPECTED_OUTPUTS[NUM_TEST_VECTORS][3] = {\n")
     for row in raw_outputs:
-
         values = ", ".join(str(int(v)) for v in row)
         f.write(f" {{{values}}}, \n")
 
     f.write("};\n\n")
-    f.write("const int8_t EXPECTED_ACTIONS" "[NUM_TEST_VECTORS] = {\n ")
+    f.write("const int8_t EXPECTED_ACTIONS[NUM_TEST_VECTORS] = {\n ")
     f.write(", ".join(str(int(v)) for v in selected_actions))
     f.write("\n};\n\n")
     f.write("#endif\n")
