@@ -90,9 +90,7 @@ experiments = []
 experiments.append(("nominal", NOMINAL.copy()))
 
 for parameter_name in ["E1", "E2", "alpha_f", "beta_f"]:
-
     for factor in variation_factors:
-
         if factor == 1.0:
             continue
 
