@@ -11,7 +11,6 @@ CALIBRATION_SAMPLES = 5000
 
 
 def reconstruct_training_inputs():
-
     rng = np.random.default_rng(SEED)
     cpu = rng.uniform(0.0, 100.0, size=NUM_SAMPLES)
     network_latency = rng.uniform(0.0, 250.0, size=NUM_SAMPLES)
@@ -49,7 +48,6 @@ EPSILON = 1e-8
 
 
 def load_artifacts():
-
     print("Loading frozen artifacts...")
     model = tf.keras.models.load_model(KERAS_MODEL_PATH)
     x_test = np.load(X_TEST_PATH).astype(np.float32)
@@ -63,13 +61,10 @@ def load_artifacts():
 
 
 def make_representative_dataset(x_train):
-
     calibration_data = x_train[:min(CALIBRATION_SAMPLES, len(x_train))]
 
     def representative_dataset():
-
         for sample in calibration_data:
-
             sample = np.expand_dims(sample, axis=0).astype(np.float32)
             yield [sample]
 
@@ -77,7 +72,6 @@ def make_representative_dataset(x_train):
 
 
 def convert_to_int8(model, x_train):
-
     print("\nConverting model to full-integer INT8 TFLite...")
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
@@ -96,7 +90,6 @@ def convert_to_int8(model, x_train):
 
 
 def create_interpreter():
-
     interpreter = tf.lite.Interpreter(model_path=INT8_MODEL_PATH)
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
@@ -119,7 +112,6 @@ def create_interpreter():
 
 
 def quantize_input(float_input, scale, zero_point):
-
     if scale == 0:
         raise ValueError("Input quantization scale is zero.")
 
@@ -129,7 +121,6 @@ def quantize_input(float_input, scale, zero_point):
 
 
 def dequantize_output(int8_output, scale, zero_point):
-
     if scale == 0:
         raise ValueError("Output quantization scale is zero.")
 
@@ -137,7 +128,6 @@ def dequantize_output(int8_output, scale, zero_point):
 
 
 def run_int8_inference(interpreter, input_details, output_details, x_test):
-
     input_index = input_details[0]["index"]
     output_index = output_details[0]["index"]
     input_scale, input_zero_point = input_details[0]["quantization"]
@@ -146,7 +136,6 @@ def run_int8_inference(interpreter, input_details, output_details, x_test):
     dequantized_predictions = []
     print("\nRunning INT8 TFLite inference on " f"{len(x_test)} test samples...")
     for sample in x_test:
-
         sample = np.expand_dims(sample, axis=0).astype(np.float32)
         quantized_sample = quantize_input(sample, input_scale, input_zero_point)
         interpreter.set_tensor(input_index, quantized_sample)
@@ -157,13 +146,12 @@ def run_int8_inference(interpreter, input_details, output_details, x_test):
         dequantized_predictions.append(output_float[0].copy())
 
     return (
-        np.asarray(int8_outputs, dtype=np.int8), 
+        np.asarray(int8_outputs, dtype=np.int8),
         np.asarray(dequantized_predictions, dtype=np.float32)
     )
 
 
 def evaluate_int8(y_test, oracle_actions, fp32_actions, fp32_predictions, int8_predictions):
-
     int8_actions = np.argmin(int8_predictions, axis=1)
     fp32_int8_agreement = np.mean(fp32_actions == int8_actions)
     fp32_int8_disagreements = np.sum(fp32_actions != int8_actions)
@@ -194,7 +182,6 @@ def evaluate_int8(y_test, oracle_actions, fp32_actions, fp32_predictions, int8_p
 
 
 def save_results(int8_raw_outputs, int8_predictions, results):
-
     np.save(os.path.join(OUTPUT_DIR, "int8_raw_outputs.npy"), int8_raw_outputs)
     np.save(os.path.join(OUTPUT_DIR, "int8_predictions.npy"), int8_predictions)
     np.save(os.path.join(OUTPUT_DIR, "int8_actions.npy"), results["int8_actions"])
@@ -205,7 +192,6 @@ def save_results(int8_raw_outputs, int8_predictions, results):
 
 
 def main():
-
     print("=" * 65)
     print("Full-Integer INT8 TFLite Conversion and Validation")
     print("=" * 65)
