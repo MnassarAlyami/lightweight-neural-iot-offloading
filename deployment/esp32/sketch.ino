@@ -37,17 +37,11 @@ const AnalyticalState ANALYTICAL_STATES[] = {
     {95.0f, 230.0f, 0, 1}
 };
 
-constexpr int NUM_ANALYTICAL_STATES =
-    sizeof(ANALYTICAL_STATES) /
-    sizeof(ANALYTICAL_STATES[0]);
+constexpr int NUM_ANALYTICAL_STATES = sizeof(ANALYTICAL_STATES) / sizeof(ANALYTICAL_STATES[0]);
 
 volatile int analytical_action_sink = 0;
 
-int argmin3(
-    int8_t a,
-    int8_t b,
-    int8_t c
-) {
+int argmin3(int8_t a, int8_t b, int8_t c) {
     int action = 0;
     int8_t minimum = a;
 
@@ -63,10 +57,7 @@ int argmin3(
     return action;
 }
 
-bool runInference(
-    const int8_t test_input[4],
-    int8_t result[3]
-) {
+bool runInference(const int8_t test_input[4], int8_t result[3]) {
     for (int i = 0; i < 4; i++) {
         input->data.int8[i] = test_input[i];
     }
@@ -115,11 +106,7 @@ void runValidationSet(
 
         for (int j = 0; j < 3; j++) {
 
-            int difference =
-                abs(
-                    (int)actual[j] -
-                    (int)expected_outputs[i][j]
-                );
+            int difference = abs((int)actual[j] - (int)expected_outputs[i][j]);
 
             if (difference == 0) {
                 individual_output_matches++;
@@ -136,22 +123,15 @@ void runValidationSet(
             exact_vector_matches++;
         }
 
-        int actual_action =
-            argmin3(
-                actual[0],
-                actual[1],
-                actual[2]
-            );
+        int actual_action = argmin3(actual[0], actual[1], actual[2]);
 
-        int expected_action =
-            expected_actions[i];
+        int expected_action = expected_actions[i];
 
         if (actual_action == expected_action) {
             action_matches++;
         }
 
-        if (!vector_exact ||
-            actual_action != expected_action) {
+        if (!vector_exact || actual_action != expected_action) {
 
             Serial.println();
 
@@ -250,29 +230,17 @@ void printTensorInformation() {
 }
 
 __attribute__((noinline))
-int analyticalDecision(
-    float C,
-    float L,
-    int T,
-    int F
-) {
+int analyticalDecision(float C, float L, int T, int F) {
     const float alpha_f = 0.25f;
     const float beta_f = 0.20f;
 
-    float L_eff =
-        L *
-        (
-            1.0f +
-            alpha_f * (1.0f - (float)F)
-        );
+    float L_eff = L * (1.0f + alpha_f * (1.0f - (float)F));
 
     float L0 = 2.5f * C + 50.0f;
     float L1 = 0.5f * L_eff + 30.0f;
     float L2 = L_eff + 10.0f;
 
-    float P_comm =
-        1.0f +
-        beta_f * (1.0f - (float)F);
+    float P_comm = 1.0f + beta_f * (1.0f - (float)F);
 
     float E0 = 0.8f * C;
     float E1 = 15.0f * P_comm;
@@ -297,17 +265,11 @@ int analyticalDecision(
         wE = 0.50f;
     }
 
-    float J0 =
-        wL * L0n +
-        wE * E0n;
+    float J0 = wL * L0n + wE * E0n;
 
-    float J1 =
-        wL * L1n +
-        wE * E1n;
+    float J1 = wL * L1n + wE * E1n;
 
-    float J2 =
-        wL * L2n +
-        wE * E2n;
+    float J2 = wL * L2n + wE * E2n;
 
     int action = 0;
     float minimum = J0;
@@ -330,16 +292,13 @@ double benchmarkInference() {
     constexpr int MEASURED_RUNS = 1000;
 
     for (int i = 0; i < 4; i++) {
-        input->data.int8[i] =
-            TEST_INPUTS[0][i];
+        input->data.int8[i] = TEST_INPUTS[0][i];
     }
 
     for (int i = 0; i < WARMUP_RUNS; i++) {
 
         if (interpreter->Invoke() != kTfLiteOk) {
-            Serial.println(
-                "Warm-up Invoke() failed."
-            );
+            Serial.println("Warm-up Invoke() failed.");
 
             return -1.0;
         }
@@ -351,19 +310,15 @@ double benchmarkInference() {
 
     for (int i = 0; i < MEASURED_RUNS; i++) {
 
-        uint32_t start_time =
-            micros();
+        uint32_t start_time = micros();
 
         if (interpreter->Invoke() != kTfLiteOk) {
-            Serial.println(
-                "Measured Invoke() failed."
-            );
+            Serial.println("Measured Invoke() failed.");
 
             return -1.0;
         }
 
-        uint32_t elapsed =
-            micros() - start_time;
+        uint32_t elapsed = micros() - start_time;
 
         total_individual += elapsed;
 
@@ -376,30 +331,22 @@ double benchmarkInference() {
         }
     }
 
-    double individual_mean =
-        (double)total_individual /
-        (double)MEASURED_RUNS;
+    double individual_mean = (double)total_individual / (double)MEASURED_RUNS;
 
-    uint32_t batch_start =
-        micros();
+    uint32_t batch_start = micros();
 
     for (int i = 0; i < MEASURED_RUNS; i++) {
 
         if (interpreter->Invoke() != kTfLiteOk) {
-            Serial.println(
-                "Batch Invoke() failed."
-            );
+            Serial.println("Batch Invoke() failed.");
 
             return -1.0;
         }
     }
 
-    uint32_t batch_total =
-        micros() - batch_start;
+    uint32_t batch_total = micros() - batch_start;
 
-    double batch_mean =
-        (double)batch_total /
-        (double)MEASURED_RUNS;
+    double batch_mean = (double)batch_total / (double)MEASURED_RUNS;
 
     Serial.println();
     Serial.println("============================================================");
@@ -440,8 +387,7 @@ double benchmarkAnalyticalPolicy() {
 
     for (int i = 0; i < WARMUP_RUNS; i++) {
 
-        int idx =
-            i % NUM_ANALYTICAL_STATES;
+        int idx = i % NUM_ANALYTICAL_STATES;
 
         analytical_action_sink =
             analyticalDecision(
@@ -458,11 +404,9 @@ double benchmarkAnalyticalPolicy() {
 
     for (int i = 0; i < INDIVIDUAL_RUNS; i++) {
 
-        int idx =
-            i % NUM_ANALYTICAL_STATES;
+        int idx = i % NUM_ANALYTICAL_STATES;
 
-        uint32_t start_time =
-            micros();
+        uint32_t start_time = micros();
 
         analytical_action_sink =
             analyticalDecision(
@@ -472,8 +416,7 @@ double benchmarkAnalyticalPolicy() {
                 ANALYTICAL_STATES[idx].F
             );
 
-        uint32_t elapsed =
-            micros() - start_time;
+        uint32_t elapsed = micros() - start_time;
 
         total_individual += elapsed;
 
@@ -486,17 +429,13 @@ double benchmarkAnalyticalPolicy() {
         }
     }
 
-    double individual_mean =
-        (double)total_individual /
-        (double)INDIVIDUAL_RUNS;
+    double individual_mean = (double)total_individual / (double)INDIVIDUAL_RUNS;
 
-    uint32_t batch_start =
-        micros();
+    uint32_t batch_start = micros();
 
     for (int i = 0; i < BATCH_RUNS; i++) {
 
-        int idx =
-            i % NUM_ANALYTICAL_STATES;
+        int idx = i % NUM_ANALYTICAL_STATES;
 
         analytical_action_sink =
             analyticalDecision(
@@ -507,12 +446,9 @@ double benchmarkAnalyticalPolicy() {
             );
     }
 
-    uint32_t batch_total =
-        micros() - batch_start;
+    uint32_t batch_total = micros() - batch_start;
 
-    double batch_mean =
-        (double)batch_total /
-        (double)BATCH_RUNS;
+    double batch_mean = (double)batch_total / (double)BATCH_RUNS;
 
     Serial.println();
     Serial.println("============================================================");
@@ -558,10 +494,7 @@ double benchmarkAnalyticalPolicy() {
     return batch_mean;
 }
 
-void printTimingComparison(
-    double neural_batch_mean,
-    double analytical_batch_mean
-) {
+void printTimingComparison(double neural_batch_mean, double analytical_batch_mean) {
     Serial.println();
     Serial.println("============================================================");
     Serial.println("NEURAL VS ANALYTICAL POLICY SUMMARY");
@@ -573,24 +506,15 @@ void printTimingComparison(
     Serial.print("Analytical multi-state batch mean (us): ");
     Serial.println(analytical_batch_mean, 6);
 
-    if (
-        neural_batch_mean > 0.0 &&
-        analytical_batch_mean > 0.0
-    ) {
-        double ratio =
-            neural_batch_mean /
-            analytical_batch_mean;
+    if (neural_batch_mean > 0.0 && analytical_batch_mean > 0.0) {
+        double ratio = neural_batch_mean / analytical_batch_mean;
 
-        Serial.print(
-            "Neural / analytical latency ratio: "
-        );
+        Serial.print("Neural / analytical latency ratio: ");
 
         Serial.print(ratio, 3);
         Serial.println(" x");
     } else {
-        Serial.println(
-            "Latency ratio unavailable."
-        );
+        Serial.println("Latency ratio unavailable.");
     }
 
     Serial.println("============================================================");
@@ -607,31 +531,17 @@ void setup() {
     Serial.println("INT8 OFFLOADING POLICY - ESP32 VALIDATION");
     Serial.println("============================================================");
 
-    model =
-        tflite::GetModel(
-            offloading_model
-        );
+    model = tflite::GetModel(offloading_model);
 
-    if (
-        model->version() !=
-        TFLITE_SCHEMA_VERSION
-    ) {
+    if (model->version() != TFLITE_SCHEMA_VERSION) {
 
-        Serial.print(
-            "Model schema version: "
-        );
+        Serial.print("Model schema version: ");
 
-        Serial.println(
-            model->version()
-        );
+        Serial.println(model->version());
 
-        Serial.print(
-            "Supported schema version: "
-        );
+        Serial.print("Supported schema version: ");
 
-        Serial.println(
-            TFLITE_SCHEMA_VERSION
-        );
+        Serial.println(TFLITE_SCHEMA_VERSION);
 
         return;
     }
@@ -640,87 +550,50 @@ void setup() {
     tflite::MicroMutableOpResolver<1>
         resolver;
 
-    if (
-        resolver.AddFullyConnected()
-        != kTfLiteOk
-    ) {
+    if (resolver.AddFullyConnected() != kTfLiteOk) {
 
-        Serial.println(
-            "AddFullyConnected() failed."
-        );
+        Serial.println("AddFullyConnected() failed.");
 
         return;
     }
 
     static
     tflite::MicroInterpreter
-        static_interpreter(
-            model,
-            resolver,
-            tensor_arena,
-            kTensorArenaSize
-        );
+        static_interpreter(model, resolver, tensor_arena, kTensorArenaSize);
 
-    interpreter =
-        &static_interpreter;
+    interpreter = &static_interpreter;
 
-    TfLiteStatus allocate_status =
-        interpreter->AllocateTensors();
+    TfLiteStatus allocate_status = interpreter->AllocateTensors();
 
-    if (
-        allocate_status
-        != kTfLiteOk
-    ) {
+    if (allocate_status != kTfLiteOk) {
 
-        Serial.println(
-            "AllocateTensors() FAILED."
-        );
+        Serial.println("AllocateTensors() FAILED.");
 
         return;
     }
 
-    Serial.println(
-        "AllocateTensors() PASS"
-    );
+    Serial.println("AllocateTensors() PASS");
 
-    Serial.print(
-        "Configured tensor arena: "
-    );
+    Serial.print("Configured tensor arena: ");
 
-    Serial.print(
-        kTensorArenaSize
-    );
+    Serial.print(kTensorArenaSize);
 
-    Serial.println(
-        " bytes"
-    );
+    Serial.println(" bytes");
 
-    input =
-        interpreter->input(0);
+    input = interpreter->input(0);
 
-    output =
-        interpreter->output(0);
+    output = interpreter->output(0);
 
-    if (
-        input == nullptr ||
-        output == nullptr
-    ) {
+    if (input == nullptr || output == nullptr) {
 
-        Serial.println(
-            "Failed to obtain tensors."
-        );
+        Serial.println("Failed to obtain tensors.");
 
         return;
     }
 
-    if (
-        input->type != kTfLiteInt8 ||
-        output->type != kTfLiteInt8
-    ) {
+    if (input->type != kTfLiteInt8 || output->type != kTfLiteInt8) {
 
-        Serial.println(
-            "ERROR: Expected INT8 input/output tensors."
-        );
+        Serial.println("ERROR: Expected INT8 input/output tensors.");
 
         return;
     }
@@ -751,21 +624,14 @@ void setup() {
         NUM_NEAR_BOUNDARY_VECTORS
     );
 
-    double neural_batch_mean =
-        benchmarkInference();
+    double neural_batch_mean = benchmarkInference();
 
-    double analytical_batch_mean =
-        benchmarkAnalyticalPolicy();
+    double analytical_batch_mean = benchmarkAnalyticalPolicy();
 
-    printTimingComparison(
-        neural_batch_mean,
-        analytical_batch_mean
-    );
+    printTimingComparison(neural_batch_mean, analytical_batch_mean);
 
     Serial.println();
-    Serial.println(
-        "Validation and multi-state analytical baseline complete."
-    );
+    Serial.println("Validation and multi-state analytical baseline complete.");
 }
 
 void loop() {
