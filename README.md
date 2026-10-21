@@ -79,6 +79,8 @@ python scripts/export_validate_fp32_tflite.py
 python scripts/export_validate_int8_tflite.py
 ```
 
+Deployment-vector and figure-generation scripts use the committed frozen INT8 model under `models/` so that the reported deployment behavior is evaluated against the preserved artifact.
+
 Run sensitivity analyses:
 
 ```bash
