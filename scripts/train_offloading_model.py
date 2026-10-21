@@ -34,19 +34,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
 def generate_states(num_samples, seed):
-    """
-    Generate the four-dimensional system state:
-        C = CPU utilization (%)
-        L = network latency (ms)
-        T = task type
-            1 = real-time
-            0 = delay-tolerant
-        F = feedback
-            1 = favorable
-            0 = degraded
-
-    The neural network receives normalized C and L.
-    """
+    """Generate synthetic system-context states."""
 
     rng = np.random.default_rng(seed)
     cpu = rng.uniform(0.0, 100.0, size=num_samples)
@@ -58,14 +46,7 @@ def generate_states(num_samples, seed):
 
 
 def calculate_costs(states):
-    """
-    Calculate latency, energy, and final objective J
-    for all three execution actions.
-    Actions:
-        0 = Local execution
-        1 = Partial offloading
-        2 = Full offloading
-    """
+    """Compute analytical latency, energy-cost, and objective values."""
 
     cpu = states[:, 0]
     network_latency = states[:, 1]
@@ -92,15 +73,7 @@ def calculate_costs(states):
 
 
 def normalize_inputs(states):
-    """
-    Convert raw state variables to the representation
-    used by the neural network.
-
-        CPU             -> CPU / 100
-        Network latency -> latency / 250
-        Task type       -> unchanged
-        Feedback        -> unchanged
-    """
+    """Normalize CPU utilization and network latency inputs."""
 
     normalized = states.astype(np.float32).copy()
     normalized[:, 0] /= 100.0
@@ -109,10 +82,7 @@ def normalize_inputs(states):
 
 
 def create_dataset(num_samples, seed):
-    """
-    Generate states and corresponding three-action
-    objective targets.
-    """
+    """Create neural inputs and three-action objective targets."""
 
     states = generate_states(num_samples=num_samples, seed=seed)
     _, _, objectives = calculate_costs(states)
@@ -121,12 +91,7 @@ def create_dataset(num_samples, seed):
 
 
 def split_dataset(inputs, targets, seed):
-    """
-    Randomly split the complete dataset into:
-        70% training
-        15% validation
-        15% testing
-    """
+    """Split data into 70/15/15 training, validation, and test sets."""
 
     rng = np.random.default_rng(seed)
     indices = np.arange(len(inputs))
@@ -148,11 +113,7 @@ def split_dataset(inputs, targets, seed):
 
 
 def build_model():
-    """
-    4 -> 16 -> 16 -> 3
-    The output contains the estimated objective for
-    each of the three actions.
-    """
+    """Build the selected 4 -> 16 -> 16 -> 3 cost estimator."""
 
     model = tf.keras.Sequential([
         tf.keras.layers.Input(shape=(4,), name="state"),
@@ -166,12 +127,7 @@ def build_model():
 
 
 def evaluate_policy(model, inputs, targets):
-    """
-    Evaluate the model as an offloading policy.
-    The analytical reference selects the action with the minimum true cost.
-    The neural policy selects the action with the minimum
-    predicted cost.
-    """
+    """Evaluate agreement and regret against the analytical reference."""
 
     predictions = model.predict(inputs, batch_size=BATCH_SIZE, verbose=0)
     reference_actions = np.argmin(targets, axis=1)
@@ -198,7 +154,7 @@ def evaluate_policy(model, inputs, targets):
 
 def main():
     print("=" * 60)
-    print("Clean Offloading Model Training Pipeline")
+    print("Offloading Model Training Pipeline")
     print("=" * 60)
     print("\nGenerating dataset...")
     inputs, targets = create_dataset(num_samples=NUM_SAMPLES, seed=SEED)
