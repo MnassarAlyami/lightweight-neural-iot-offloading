@@ -5,7 +5,6 @@ import tensorflow as tf
 
 SEED = 42
 
-os.environ["PYTHONHASHSEED"] = str(SEED)
 random.seed(SEED)
 np.random.seed(SEED)
 tf.random.set_seed(SEED)
@@ -81,11 +80,7 @@ def calculate_costs(states):
     communication_penalty = 1.0 + FEEDBACK_ENERGY_PENALTY * (1.0 - feedback)
     energy_partial = 15.0 * communication_penalty
     energy_full = 25.0 * communication_penalty
-    energy = np.column_stack([
-        energy_local,
-        np.full(len(states), energy_partial),
-        np.full(len(states), energy_full)
-    ])
+    energy = np.column_stack([energy_local, energy_partial, energy_full])
     latency_normalized = latency / LATENCY_SCALE
     energy_normalized = energy / ENERGY_SCALE
     latency_weight = np.where(task_type == 1, 0.75, 0.50)
@@ -160,7 +155,7 @@ def build_model():
     """
 
     model = tf.keras.Sequential([
-        tf.keras.layers.Input(shape=(4), name="state"),
+        tf.keras.layers.Input(shape=(4,), name="state"),
         tf.keras.layers.Dense(HIDDEN_WIDTH, activation="relu", name="hidden_1"),
         tf.keras.layers.Dense(HIDDEN_WIDTH, activation="relu", name="hidden_2"),
         tf.keras.layers.Dense(3, activation="linear", name="action_costs")
@@ -173,20 +168,20 @@ def build_model():
 def evaluate_policy(model, inputs, targets):
     """
     Evaluate the model as an offloading policy.
-    The oracle selects the action with the minimum true cost.
+    The analytical reference selects the action with the minimum true cost.
     The neural policy selects the action with the minimum
     predicted cost.
     """
 
     predictions = model.predict(inputs, batch_size=BATCH_SIZE, verbose=0)
-    oracle_actions = np.argmin(targets, axis=1)
+    reference_actions = np.argmin(targets, axis=1)
     predicted_actions = np.argmin(predictions, axis=1)
-    agreement = np.mean(predicted_actions == oracle_actions)
+    agreement = np.mean(predicted_actions == reference_actions)
     selected_indices = np.arange(len(targets))
     predicted_policy_cost = targets[selected_indices, predicted_actions]
-    oracle_cost = targets[selected_indices, oracle_actions]
-    regret = predicted_policy_cost - oracle_cost
-    normalized_regret = regret / (oracle_cost + EPSILON)
+    reference_cost = targets[selected_indices, reference_actions]
+    regret = predicted_policy_cost - reference_cost
+    normalized_regret = regret / (reference_cost + EPSILON)
     return {
         "agreement": agreement,
         "mean_regret": np.mean(regret),
@@ -194,7 +189,7 @@ def evaluate_policy(model, inputs, targets):
         "mean_normalized_regret": np.mean(normalized_regret),
         "median_normalized_regret": np.median(normalized_regret),
         "predictions": predictions,
-        "oracle_actions": oracle_actions,
+        "reference_actions": reference_actions,
         "predicted_actions": predicted_actions,
         "regret": regret,
         "normalized_regret": normalized_regret
@@ -221,7 +216,7 @@ def main():
         restore_best_weights=True
     )
     print("\nTraining...")
-    history = model.fit(
+    model.fit(
         x_train,
         y_train,
         validation_data=(x_val, y_val),
@@ -239,7 +234,7 @@ def main():
     print("=" * 60)
     print(f"Test MSE                  : {test_loss:.8f}")
     print(f"Test MAE                  : {test_mae:.8f}")
-    print(f"Oracle agreement : {results['agreement'] * 100:.4f}%")
+    print(f"Reference-policy agreement : {results['agreement'] * 100:.4f}%")
     print(f"Mean regret : {results['mean_regret']:.10e}")
     print(f"Median regret : {results['median_regret']:.10e}")
     print(f"Mean normalized regret : {results['mean_normalized_regret']:.10e}")
@@ -249,14 +244,14 @@ def main():
     np.save(os.path.join(OUTPUT_DIR, "x_test.npy"), x_test)
     np.save(os.path.join(OUTPUT_DIR, "y_test.npy"), y_test)
     np.save(os.path.join(OUTPUT_DIR, "test_predictions.npy"), results["predictions"])
-    np.save(os.path.join(OUTPUT_DIR, "oracle_actions.npy"), results["oracle_actions"])
+    np.save(os.path.join(OUTPUT_DIR, "reference_actions.npy"), results["reference_actions"])
     np.save(os.path.join(OUTPUT_DIR, "predicted_actions.npy"), results["predicted_actions"])
     print("\nSaved:")
     print(f"  {model_path}")
     print("  outputs/x_test.npy")
     print("  outputs/y_test.npy")
     print("  outputs/test_predictions.npy")
-    print("  outputs/oracle_actions.npy")
+    print("  outputs/reference_actions.npy")
     print("  outputs/predicted_actions.npy")
     print("\nPipeline completed.")
 
