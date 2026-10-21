@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import tensorflow as tf
 
 ARCH_PATH = "results/architecture_seed_results.csv"
 COMBINED_PATH = "results/combined_sensitivity.csv"
@@ -9,8 +10,8 @@ WEIGHT_PATH = "results/weight_sensitivity.csv"
 
 X_TEST_PATH = "outputs/x_test.npy"
 Y_TEST_PATH = "outputs/y_test.npy"
-ORACLE_ACTIONS_PATH = "outputs/oracle_actions.npy"
-INT8_ACTIONS_PATH = "outputs/int8_actions.npy"
+REFERENCE_ACTIONS_PATH = "outputs/reference_actions.npy"
+FROZEN_INT8_MODEL_PATH = "models/offloading_int8.tflite"
 
 OUT = "final_paper_figures"
 os.makedirs(OUT, exist_ok=True)
@@ -41,6 +42,25 @@ def save_figure(fig, filename):
     fig.savefig(os.path.join(OUT, filename + ".pdf"), bbox_inches="tight")
     fig.savefig(os.path.join(OUT, filename + ".png"), dpi=300, bbox_inches="tight")
     plt.close(fig)
+
+
+def run_frozen_int8_actions(inputs):
+    interpreter = tf.lite.Interpreter(model_path=FROZEN_INT8_MODEL_PATH)
+    interpreter.allocate_tensors()
+    input_details = interpreter.get_input_details()[0]
+    output_details = interpreter.get_output_details()[0]
+    input_scale, input_zero_point = input_details["quantization"]
+    actions = np.empty(len(inputs), dtype=int)
+
+    for i, sample in enumerate(inputs):
+        quantized = np.round(sample / input_scale + input_zero_point)
+        quantized = np.clip(quantized, -128, 127).astype(np.int8)
+        interpreter.set_tensor(input_details["index"], quantized.reshape(1, 4))
+        interpreter.invoke()
+        raw_output = interpreter.get_tensor(output_details["index"])[0]
+        actions[i] = int(np.argmin(raw_output))
+
+    return actions
 
 df = pd.read_csv(ARCH_PATH)
 
@@ -142,15 +162,15 @@ save_figure(fig, "Fig2_architecture_search")
 x_test = np.load(X_TEST_PATH)
 y_test = np.load(Y_TEST_PATH)
 
-oracle_actions = np.load(ORACLE_ACTIONS_PATH).astype(int)
+reference_actions = np.load(REFERENCE_ACTIONS_PATH).astype(int)
 
-int8_actions = np.load(INT8_ACTIONS_PATH).astype(int)
+int8_actions = run_frozen_int8_actions(x_test)
 
 N = len(x_test)
 
 assert x_test.shape == (N, 4)
 assert y_test.shape == (N, 3)
-assert len(oracle_actions) == N
+assert len(reference_actions) == N
 assert len(int8_actions) == N
 
 print()
@@ -190,14 +210,14 @@ objective_matrix = (
     (energy_matrix / ENERGY_SCALE)
 )
 
-recomputed_oracle = np.argmin(objective_matrix, axis=1)
+recomputed_reference = np.argmin(objective_matrix, axis=1)
 
-oracle_agreement = np.mean(recomputed_oracle == oracle_actions)
+reference_agreement = np.mean(recomputed_reference == reference_actions)
 
-print("Recomputed/saved oracle agreement:", f"{oracle_agreement * 100:.6f}%")
+print("Recomputed/saved reference agreement:", f"{reference_agreement * 100:.6f}%")
 
-if oracle_agreement < 0.999999:
-    raise RuntimeError("Oracle mismatch detected. Do not generate the final figures.")
+if reference_agreement < 0.999999:
+    raise RuntimeError("Reference-policy mismatch detected. Do not generate the final figures.")
 
 baseline_actions = np.where(cpu > 70.0, 2, 0).astype(int)
 
@@ -208,20 +228,20 @@ def select_values(matrix, actions):
     return matrix[rows, actions]
 
 policies = {
-    "Analytical Reference": oracle_actions,
+    "Analytical Reference": reference_actions,
     "INT8 Neural Policy": int8_actions,
     "Static Baseline": baseline_actions
 }
 
 results = {}
 
-oracle_objective = select_values(objective_matrix, oracle_actions)
+reference_objective = select_values(objective_matrix, reference_actions)
 
 for name, actions in policies.items():
     latency = select_values(latency_matrix, actions)
     energy = select_values(energy_matrix, actions)
     objective = select_values(objective_matrix, actions)
-    regret = objective - oracle_objective
+    regret = objective - reference_objective
     results[name] = {
         "actions": actions,
         "latency": latency,
