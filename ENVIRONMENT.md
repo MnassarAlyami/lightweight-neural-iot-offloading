@@ -23,4 +23,4 @@ The frozen Keras artifact also records `keras_version=2.11.0` and the TensorFlow
 
 For a close reproduction of the Python-side experiments, use the package versions above. The exact PyTorch build used for the architecture search was the CPU build reported as `1.13.1+cpu`.
 
-A full historical `pip freeze` is not required for the manuscript results because the principal numerical dependencies and framework versions used by the reported pipeline are now recorded explicitly.
+A full historical `pip freeze` was not retained. The principal framework and numerical-library versions used by the reported pipeline are recorded above.
