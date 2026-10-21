@@ -24,4 +24,4 @@ The following supplied artifacts were checked against the final experiment but a
 | `y_test.npy` | 90,128 B | `e89a7ad0958d547192880e12250f04d0db8ee266420cb8034b1757d24f5ac99e` |
 | `reference_actions.npy` | 60,128 B | `b7999f74d66a528c0078461fd8ac7442924fa70dbf184eeb73929cb83b3b4cb3` |
 
-The reference-action array is the same numerical artifact originally supplied under the filename `oracle_actions.npy`; only the repository terminology has been updated. The TFLite binary hash is the canonical deployment-artifact identifier. Text formatting or line endings can change a generated C header without changing the embedded model bytes.
+The reference-action array is the same numerical artifact originally supplied under the filename `oracle_actions.npy`; only the repository terminology has been updated. The INT8 TFLite binary hash is the canonical deployment-artifact identifier. Text formatting or line endings can change a generated C header without changing the embedded model bytes.
