@@ -4,19 +4,19 @@ import tensorflow as tf
 
 OUTPUT_DIR = "outputs"
 
-MODEL_PATH = os.path.join(OUTPUT_DIR, "offloading_int8.tflite")
+MODEL_PATH = os.path.join("models", "offloading_int8.tflite")
 
 X_TEST_PATH = os.path.join(OUTPUT_DIR, "x_test.npy")
 
 Y_TEST_PATH = os.path.join(OUTPUT_DIR, "y_test.npy")
 
-ORACLE_PATH = os.path.join(OUTPUT_DIR, "oracle_actions.npy")
+REFERENCE_PATH = os.path.join(OUTPUT_DIR, "reference_actions.npy")
 
 NUM_VECTORS = 20
 
 x_test = np.load(X_TEST_PATH).astype(np.float32)
 y_test = np.load(Y_TEST_PATH).astype(np.float32)
-oracle_actions = np.load(ORACLE_PATH)
+reference_actions = np.load(REFERENCE_PATH)
 
 interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
 
@@ -36,7 +36,7 @@ quantized_inputs = []
 raw_outputs = []
 dequantized_outputs = []
 selected_actions = []
-selected_oracle_actions = []
+selected_reference_actions = []
 
 for idx in indices:
     x = x_test[idx]
@@ -47,13 +47,13 @@ for idx in indices:
     q_output = interpreter.get_tensor(output_details["index"])[0].copy()
     output_float = (q_output.astype(np.float32) - output_zero_point) * output_scale
     action = int(np.argmin(q_output))
-    oracle = int(oracle_actions[idx])
+    oracle = int(reference_actions[idx])
     normalized_inputs.append(x)
     quantized_inputs.append(q_input)
     raw_outputs.append(q_output)
     dequantized_outputs.append(output_float)
     selected_actions.append(action)
-    selected_oracle_actions.append(oracle)
+    selected_reference_actions.append(oracle)
 
 normalized_inputs = np.asarray(normalized_inputs, dtype=np.float32)
 
@@ -65,7 +65,7 @@ dequantized_outputs = np.asarray(dequantized_outputs, dtype=np.float32)
 
 selected_actions = np.asarray(selected_actions, dtype=np.int32)
 
-selected_oracle_actions = np.asarray(selected_oracle_actions, dtype=np.int32)
+selected_reference_actions = np.asarray(selected_reference_actions, dtype=np.int32)
 
 print("=" * 75)
 print("DEPLOYMENT VALIDATION VECTORS")
@@ -92,7 +92,7 @@ for i in range(NUM_VECTORS):
     print("INT8 output :", raw_outputs[i])
     print("Output costs :", dequantized_outputs[i])
     print("INT8 action :", selected_actions[i])
-    print("Oracle action :", selected_oracle_actions[i])
+    print("Reference action :", selected_reference_actions[i])
 
 np.savez(
     os.path.join(OUTPUT_DIR, "deployment_vectors.npz"),
@@ -102,7 +102,7 @@ np.savez(
     raw_outputs=raw_outputs,
     dequantized_outputs=dequantized_outputs,
     selected_actions=selected_actions,
-    oracle_actions=selected_oracle_actions
+    reference_actions=selected_reference_actions
 )
 
 header_path = os.path.join(OUTPUT_DIR, "deployment_vectors.h")
