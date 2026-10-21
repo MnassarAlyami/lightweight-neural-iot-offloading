@@ -218,3 +218,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project-generated artifacts
+outputs/
+deployment/esp32/offloading_model.h
+
+# Embedded build and IDE files
+.pio/
+build/
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,215 @@
+import os
+import random
+import numpy as np
+import tensorflow as tf
+
+SEED = 42
+
+random.seed(SEED)
+np.random.seed(SEED)
+tf.random.set_seed(SEED)
+
+NUM_SAMPLES = 50000
+
+TRAIN_RATIO = 0.70
+VAL_RATIO = 0.15
+TEST_RATIO = 0.15
+
+HIDDEN_WIDTH = 16
+
+EPOCHS = 200
+BATCH_SIZE = 64
+LEARNING_RATE = 1e-3
+
+FEEDBACK_LATENCY_PENALTY = 0.25
+FEEDBACK_ENERGY_PENALTY = 0.20
+
+LATENCY_SCALE = 260.0
+ENERGY_SCALE = 80.0
+
+EPSILON = 1e-8
+
+OUTPUT_DIR = "outputs"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+
+def generate_states(num_samples, seed):
+    """Generate synthetic system-context states."""
+
+    rng = np.random.default_rng(seed)
+    cpu = rng.uniform(0.0, 100.0, size=num_samples)
+    network_latency = rng.uniform(0.0, 250.0, size=num_samples)
+    task_type = rng.integers(0, 2, size=num_samples)
+    feedback = rng.integers(0, 2, size=num_samples)
+    states = np.column_stack([cpu, network_latency, task_type, feedback])
+    return states
+
+
+def calculate_costs(states):
+    """Compute analytical latency, energy-cost, and objective values."""
+
+    cpu = states[:, 0]
+    network_latency = states[:, 1]
+    task_type = states[:, 2]
+    feedback = states[:, 3]
+    effective_network_latency = network_latency * (1.0 + FEEDBACK_LATENCY_PENALTY * (1.0 - feedback))
+    latency_local = 2.5 * cpu + 50.0
+    latency_partial = 0.5 * effective_network_latency + 30.0
+    latency_full = effective_network_latency + 10.0
+    latency = np.column_stack([latency_local, latency_partial, latency_full])
+    energy_local = 0.8 * cpu
+    communication_penalty = 1.0 + FEEDBACK_ENERGY_PENALTY * (1.0 - feedback)
+    energy_partial = 15.0 * communication_penalty
+    energy_full = 25.0 * communication_penalty
+    energy = np.column_stack([energy_local, energy_partial, energy_full])
+    latency_normalized = latency / LATENCY_SCALE
+    energy_normalized = energy / ENERGY_SCALE
+    latency_weight = np.where(task_type == 1, 0.75, 0.50)
+    energy_weight = np.where(task_type == 1, 0.25, 0.50)
+    latency_weight = latency_weight[:, np.newaxis]
+    energy_weight = energy_weight[:, np.newaxis]
+    objective = latency_weight * latency_normalized + energy_weight * energy_normalized
+    return latency, energy, objective
+
+
+def normalize_inputs(states):
+    """Normalize CPU utilization and network latency inputs."""
+
+    normalized = states.astype(np.float32).copy()
+    normalized[:, 0] /= 100.0
+    normalized[:, 1] /= 250.0
+    return normalized
+
+
+def create_dataset(num_samples, seed):
+    """Create neural inputs and three-action objective targets."""
+
+    states = generate_states(num_samples=num_samples, seed=seed)
+    _, _, objectives = calculate_costs(states)
+    inputs = normalize_inputs(states)
+    return inputs.astype(np.float32), objectives.astype(np.float32)
+
+
+def split_dataset(inputs, targets, seed):
+    """Split data into 70/15/15 training, validation, and test sets."""
+
+    rng = np.random.default_rng(seed)
+    indices = np.arange(len(inputs))
+    rng.shuffle(indices)
+    n = len(indices)
+    train_end = int(TRAIN_RATIO * n)
+    val_end = train_end + int(VAL_RATIO * n)
+    train_idx = indices[:train_end]
+    val_idx = indices[train_end:val_end]
+    test_idx = indices[val_end:]
+    return (
+        inputs[train_idx],
+        targets[train_idx],
+        inputs[val_idx],
+        targets[val_idx],
+        inputs[test_idx],
+        targets[test_idx]
+    )
+
+
+def build_model():
+    """Build the selected 4 -> 16 -> 16 -> 3 cost estimator."""
+
+    model = tf.keras.Sequential([
+        tf.keras.layers.Input(shape=(4,), name="state"),
+        tf.keras.layers.Dense(HIDDEN_WIDTH, activation="relu", name="hidden_1"),
+        tf.keras.layers.Dense(HIDDEN_WIDTH, activation="relu", name="hidden_2"),
+        tf.keras.layers.Dense(3, activation="linear", name="action_costs")
+    ])
+    optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
+    model.compile(optimizer=optimizer, loss="mse", metrics=["mae"])
+    return model
+
+
+def evaluate_policy(model, inputs, targets):
+    """Evaluate agreement and regret against the analytical reference."""
+
+    predictions = model.predict(inputs, batch_size=BATCH_SIZE, verbose=0)
+    reference_actions = np.argmin(targets, axis=1)
+    predicted_actions = np.argmin(predictions, axis=1)
+    agreement = np.mean(predicted_actions == reference_actions)
+    selected_indices = np.arange(len(targets))
+    predicted_policy_cost = targets[selected_indices, predicted_actions]
+    reference_cost = targets[selected_indices, reference_actions]
+    regret = predicted_policy_cost - reference_cost
+    normalized_regret = regret / (reference_cost + EPSILON)
+    return {
+        "agreement": agreement,
+        "mean_regret": np.mean(regret),
+        "median_regret": np.median(regret),
+        "mean_normalized_regret": np.mean(normalized_regret),
+        "median_normalized_regret": np.median(normalized_regret),
+        "predictions": predictions,
+        "reference_actions": reference_actions,
+        "predicted_actions": predicted_actions,
+        "regret": regret,
+        "normalized_regret": normalized_regret
+    }
+
+
+def main():
+    print("=" * 60)
+    print("Offloading Model Training Pipeline")
+    print("=" * 60)
+    print("\nGenerating dataset...")
+    inputs, targets = create_dataset(num_samples=NUM_SAMPLES, seed=SEED)
+    (x_train, y_train, x_val, y_val, x_test, y_test) = split_dataset(inputs, targets, seed=SEED)
+    print(f"Total samples : {len(inputs)}")
+    print(f"Training      : {len(x_train)}")
+    print(f"Validation    : {len(x_val)}")
+    print(f"Testing       : {len(x_test)}")
+    model = build_model()
+    print("\nModel:")
+    model.summary()
+    early_stopping = tf.keras.callbacks.EarlyStopping(
+        monitor="val_loss",
+        patience=20,
+        restore_best_weights=True
+    )
+    print("\nTraining...")
+    model.fit(
+        x_train,
+        y_train,
+        validation_data=(x_val, y_val),
+        epochs=EPOCHS,
+        batch_size=BATCH_SIZE,
+        callbacks=[early_stopping],
+        verbose=1
+    )
+    print("\nEvaluating regression performance...")
+    test_loss, test_mae = model.evaluate(x_test, y_test, batch_size=BATCH_SIZE, verbose=0)
+    print("Evaluating offloading policy...")
+    results = evaluate_policy(model, x_test, y_test)
+    print("\n" + "=" * 60)
+    print("FINAL TEST RESULTS")
+    print("=" * 60)
+    print(f"Test MSE                  : {test_loss:.8f}")
+    print(f"Test MAE                  : {test_mae:.8f}")
+    print(f"Reference-policy agreement : {results['agreement'] * 100:.4f}%")
+    print(f"Mean regret : {results['mean_regret']:.10e}")
+    print(f"Median regret : {results['median_regret']:.10e}")
+    print(f"Mean normalized regret : {results['mean_normalized_regret']:.10e}")
+    print(f"Median normalized regret : {results['median_normalized_regret']:.10e}")
+    model_path = os.path.join(OUTPUT_DIR, "offloading_fp32.keras")
+    model.save(model_path)
+    np.save(os.path.join(OUTPUT_DIR, "x_test.npy"), x_test)
+    np.save(os.path.join(OUTPUT_DIR, "y_test.npy"), y_test)
+    np.save(os.path.join(OUTPUT_DIR, "test_predictions.npy"), results["predictions"])
+    np.save(os.path.join(OUTPUT_DIR, "reference_actions.npy"), results["reference_actions"])
+    np.save(os.path.join(OUTPUT_DIR, "predicted_actions.npy"), results["predicted_actions"])
+    print("\nSaved:")
+    print(f"  {model_path}")
+    print("  outputs/x_test.npy")
+    print("  outputs/y_test.npy")
+    print("  outputs/test_predictions.npy")
+    print("  outputs/reference_actions.npy")
+    print("  outputs/predicted_actions.npy")
+    print("\nPipeline completed.")
+
+if __name__ == "__main__":
+    main()
