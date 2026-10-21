@@ -109,24 +109,6 @@ Generate the main evaluation figures:
 python scripts/generate_final_paper_figures.py
 ```
 
-## Main reported deployment results
-
-| Characteristic | Result |
-|---|---:|
-| Selected architecture | `4 -> 16 -> 16 -> 3` |
-| Trainable parameters | 403 |
-| MACs per inference | 368 |
-| INT8 model size | 2,776 B (2.71 KiB) |
-| INT8/reference-policy agreement | 99.17% |
-| Minimum successful tensor arena tested | 1,680 B |
-| Practical tensor arena | 2 KiB |
-| Simulated ESP32 model inference | ~0.854 ms |
-| Direct analytical decision | ~31.81 us |
-
-For the current three-action formulation, direct analytical evaluation is faster than neural inference. The neural model is evaluated as a compact learned representation of the analytical policy rather than as a faster substitute for the underlying equations.
-
-The modeled energy values are analytical energy-cost proxies, not physical energy measurements. The ESP32 measurements are from a simulated proof-of-concept environment and should not be interpreted as physical-device power, energy, or end-to-end communication measurements.
-
 ## Reproducibility notes
 
 See `REPRODUCIBILITY_NOTES.md` for the architecture-search screening correction and other methodological details relevant to reproducing the final manuscript results.
