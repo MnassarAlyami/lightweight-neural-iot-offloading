@@ -8,7 +8,7 @@ The firmware performs three validation checks:
 - 30 exact INT8 tie cases
 - 30 cases one quantization level from a tie
 
-It then benchmarks the TensorFlow Lite Micro `Invoke()` operation and a direct analytical implementation of the same three-action decision rule. The neural benchmark times `Invoke()` only, whereas the analytical benchmark includes formula evaluation and action selection.
+It then benchmarks the TensorFlow Lite Micro `Invoke()` operation and a direct analytical implementation of the same three-action decision rule. The neural benchmark times `Invoke()` only with the input tensor preloaded, whereas the analytical benchmark evaluates the formulas and selects the action across eight representative states.
 
 The firmware is configured with a 2 KiB TFLM tensor arena.
 
