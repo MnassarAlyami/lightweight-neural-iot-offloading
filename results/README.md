@@ -19,3 +19,5 @@ The sensitivity perturbations are systematic robustness scenarios, not empirical
 The 7,500-state held-out arrays are deterministic outputs of `scripts/train_offloading_model.py` and are not committed separately. Their verified hashes are recorded in `ARTIFACTS.md`.
 
 In the architecture-search CSV schema, the legacy field name `oracle_objective` denotes the analytical reference-policy objective.
+
+The architecture-search fields `estimated_int8_model_bytes` and `peak_activation_bytes` are screening estimates; they should not be interpreted as the deployed TFLite file size or measured TFLM tensor-arena requirement.
