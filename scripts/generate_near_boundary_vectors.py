@@ -32,7 +32,7 @@ input_scale, input_zero_point = input_details["quantization"]
 output_scale, output_zero_point = output_details["quantization"]
 
 print("=" * 75)
-print("INT8 DECISION-BOUNDARY VECTOR GENERATION")
+print("INT8 NEAR-BOUNDARY VECTOR GENERATION")
 print("=" * 75)
 
 print(f"\nTest samples : {len(x_test)}")
@@ -104,24 +104,24 @@ for idx in boundary_indices:
 objective_margins = np.asarray(objective_margins, dtype=np.float32)
 
 print("\n" + "=" * 75)
-print("SELECTED DECISION-BOUNDARY CASES")
+print("SELECTED NEAR-BOUNDARY CASES")
 print("=" * 75)
 
 for i in range(NUM_BOUNDARY_VECTORS):
     idx = boundary_indices[i]
     print("\n" + "-" * 75)
-    print(f"Boundary vector {i + 1} (test index {idx})")
+    print(f"Near-boundary vector {i + 1} (test index {idx})")
     print("Normalized input :", boundary_inputs_float[i])
     print("INT8 input :", boundary_inputs_int8[i])
     print("INT8 output :", boundary_outputs_int8[i])
-    print("Output costs :", boundary_outputs_float[i])
+    print("Dequantized output :", boundary_outputs_float[i])
     print("INT8 margin :", boundary_margins[i])
     print("Objective margin :", f"{objective_margins[i]:.10e}")
     print("INT8 action :", boundary_actions[i])
     print("Reference action :", boundary_reference_actions[i])
 
 print("\n" + "=" * 75)
-print("BOUNDARY SET SUMMARY")
+print("NEAR-BOUNDARY SET SUMMARY")
 print("=" * 75)
 
 print(f"Selected vectors : {NUM_BOUNDARY_VECTORS}")
