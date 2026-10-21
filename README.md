@@ -97,7 +97,7 @@ python scripts/generate_near_boundary_vectors.py
 python scripts/generate_exact_tie_vectors.py
 ```
 
-The exact INT8 tie cases used in the proof-of-concept evaluation are included as `deployment/esp32/boundary_vectors.h`. The original generator was not recovered; `scripts/generate_exact_tie_vectors.py` is a reconstructed implementation of the documented zero-margin selection rule. The frozen header remains the authoritative artifact for the reported experiment.
+The frozen validation headers used in the proof-of-concept evaluation are included under `deployment/esp32/`. See `REPRODUCIBILITY_NOTES.md` for the provenance of the reconstructed exact-tie generator.
 
 Generate the C header for the frozen INT8 model before compiling the ESP32 firmware:
 
