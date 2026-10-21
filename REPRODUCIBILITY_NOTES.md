@@ -20,7 +20,7 @@ The one-at-a-time, combined, and objective-weight sensitivity scripts use a fixe
 
 ## ESP32 proof of concept
 
-The Wokwi/ESP32 measurements validate firmware integration, numerical consistency, tensor-arena allocation, and model-inference timing in a simulated environment. They are not physical-device power or end-to-end communication measurements.
+The simulated ESP32 proof-of-concept measurements validate firmware integration, numerical consistency, tensor-arena allocation, and model-inference timing in a simulated environment. They are not physical-device power or end-to-end communication measurements.
 
 
 ## Exact INT8 tie-case generator
