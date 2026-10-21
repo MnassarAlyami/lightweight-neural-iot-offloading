@@ -221,7 +221,6 @@ __marimo__/
 
 # Project-generated artifacts
 outputs/
-final_paper_figures/
 deployment/esp32/offloading_model.h
 
 # Embedded build and IDE files
