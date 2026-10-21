@@ -110,11 +110,11 @@ print("=" * 75)
 for i in range(NUM_BOUNDARY_VECTORS):
     idx = boundary_indices[i]
     print("\n" + "-" * 75)
-    print(f"Boundary vector {i + 1} (test index {idx})")
+    print(f"Tie vector {i + 1} (test index {idx})")
     print("Normalized input :", boundary_inputs_float[i])
     print("INT8 input :", boundary_inputs_int8[i])
     print("INT8 output :", boundary_outputs_int8[i])
-    print("Output costs :", boundary_outputs_float[i])
+    print("Dequantized output :", boundary_outputs_float[i])
     print("INT8 margin :", boundary_margins[i])
     print("Objective margin :", f"{objective_margins[i]:.10e}")
     print("INT8 action :", boundary_actions[i])
