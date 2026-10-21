@@ -1,6 +1,6 @@
 # Results
 
-This directory contains the frozen numerical outputs used to reproduce the main reported analyses.
+This directory contains the frozen numerical outputs associated with the manuscript. Rerun scripts write regenerated outputs under `outputs/` and do not overwrite these files.
 
 ## Architecture search
 
@@ -17,3 +17,5 @@ This directory contains the frozen numerical outputs used to reproduce the main 
 The sensitivity perturbations are systematic robustness scenarios, not empirical confidence intervals.
 
 The 7,500-state held-out arrays are deterministic outputs of `scripts/train_offloading_model.py` and are not committed separately. Their verified hashes are recorded in `ARTIFACTS.md`.
+
+In the architecture-search CSV schema, the legacy field name `oracle_objective` denotes the analytical reference-policy objective.
