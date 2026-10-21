@@ -159,7 +159,7 @@ def evaluate_model(model, states_raw):
     states_normalized = normalize_states(states_raw)
     x = torch.tensor(states_normalized, dtype=torch.float32)
     with torch.no_grad():
-        predicted_objective = model(x) .cpu() .numpy()
+        predicted_objective = model(x).cpu().numpy()
 
     predicted_actions = np.argmin(predicted_objective, axis=1)
     true_objective = calculate_objective(states_raw)
@@ -226,7 +226,7 @@ def evaluate_int8_screening(model, states_raw):
         fp32_output = model(x)
         fp32_actions = torch.argmin(fp32_output, dim=1).cpu().numpy()
 
-    quantized_model = torch.quantization .quantize_dynamic(model, {nn.Linear}, dtype=torch.qint8)
+    quantized_model = torch.quantization.quantize_dynamic(model, {nn.Linear}, dtype=torch.qint8)
     quantized_model.eval()
     with torch.no_grad():
         int8_output = quantized_model(x)
@@ -309,7 +309,7 @@ def passes_constraints(profile):
 
 
 def main():
-    output_dir = "results"
+    output_dir = os.path.join("outputs", "architecture_search")
     os.makedirs(output_dir, exist_ok=True)
     train_states, train_objective = create_dataset(NUM_TRAIN_SAMPLES, 100)
     validation_states_raw = generate_contexts(NUM_VALIDATION_SAMPLES, 200)
@@ -419,7 +419,6 @@ def main():
         )
         .reset_index()
     )
-    summary.to_csv(os.path.join(output_dir, "architecture_summary.csv"), index=False)
     MIN_REFERENCE_AGREEMENT = 0.99
     MIN_INT8_AGREEMENT = 0.99
     MAX_AGREEMENT_SD = 0.005
