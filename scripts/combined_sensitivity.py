@@ -7,8 +7,8 @@ N_SAMPLES = 50_000
 
 rng = np.random.default_rng(SEED)
 
-RESULTS_DIR = Path("results")
-RESULTS_DIR.mkdir(exist_ok=True)
+RESULTS_DIR = Path("outputs") / "sensitivity"
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 NOMINAL = {"E1": 15.0, "E2": 25.0, "alpha_f": 0.25, "beta_f": 0.20}
 
