@@ -6,7 +6,7 @@ This repository contains the code, frozen model artifacts, evaluation data, and 
 
 The method treats task offloading as a context-dependent cost-minimization problem over three execution options: local execution, partial offloading, and full offloading. The input context contains CPU utilization, network latency, task type, and network-condition feedback. Analytical latency and modeled energy-cost functions define the reference action costs, and a compact neural network learns to estimate those costs.
 
-The selected network is `4 -> 16 -> 16 -> 3`, with 403 trainable parameters and 368 MACs per inference. The final fully quantized INT8 model occupies 2,776 bytes (2.71 KiB) and achieves 99.17% action agreement with the analytical reference policy on 7,500 held-out states.
+The deployment path uses the selected `4 -> 16 -> 16 -> 3` network and includes frozen FP32 and INT8 TensorFlow Lite artifacts for verification.
 
 ## Repository structure
 
@@ -54,11 +54,11 @@ Install the required Python packages with:
 pip install -r requirements.txt
 ```
 
-See `ENVIRONMENT.md` for the environment metadata recoverable from the frozen artifacts and for commands to capture the original package versions if the original environment is still available.
+See `ENVIRONMENT.md` for the recorded software versions used in the reported experiments.
 
 ## Main workflow
 
-Run scripts from the repository root.
+Run scripts from the repository root. Regenerated artifacts are written under `outputs/`; the committed files under `results/` are the frozen numerical outputs associated with the manuscript.
 
 Architecture search:
 
@@ -95,7 +95,7 @@ python scripts/generate_near_boundary_vectors.py
 python scripts/generate_exact_tie_vectors.py
 ```
 
-The exact INT8 tie cases used in the proof-of-concept evaluation are included as `deployment/esp32/boundary_vectors.h`. The original exact-tie generator was not recovered, so `scripts/generate_exact_tie_vectors.py` is a reconstructed generator that reproduces the documented selection rule by taking the first 30 held-out cases with zero INT8 decision margin.
+The exact INT8 tie cases used in the proof-of-concept evaluation are included as `deployment/esp32/boundary_vectors.h`. The original generator was not recovered; `scripts/generate_exact_tie_vectors.py` is a reconstructed implementation of the documented zero-margin selection rule. The frozen header remains the authoritative artifact for the reported experiment.
 
 Generate the C header for the frozen INT8 model before compiling the ESP32 firmware:
 
