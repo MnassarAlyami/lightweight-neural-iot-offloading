@@ -13,7 +13,7 @@ Y_TEST_PATH = "outputs/y_test.npy"
 REFERENCE_ACTIONS_PATH = "outputs/reference_actions.npy"
 FROZEN_INT8_MODEL_PATH = "models/offloading_int8.tflite"
 
-OUT = "final_paper_figures"
+OUT = os.path.join("outputs", "figures")
 os.makedirs(OUT, exist_ok=True)
 
 ALPHA_F = 0.25
