@@ -39,6 +39,7 @@ const AnalyticalState ANALYTICAL_STATES[] = {
 
 constexpr int NUM_ANALYTICAL_STATES = sizeof(ANALYTICAL_STATES) / sizeof(ANALYTICAL_STATES[0]);
 
+// Prevent analytical benchmark work from being optimized away.
 volatile int analytical_action_sink = 0;
 
 int argmin3(int8_t a, int8_t b, int8_t c) {
@@ -532,9 +533,7 @@ void setup() {
         return;
     }
 
-    static
-    tflite::MicroMutableOpResolver<1>
-        resolver;
+    static tflite::MicroMutableOpResolver<1> resolver;
 
     if (resolver.AddFullyConnected() != kTfLiteOk) {
         Serial.println("AddFullyConnected() failed.");
@@ -542,9 +541,12 @@ void setup() {
         return;
     }
 
-    static
-    tflite::MicroInterpreter
-        static_interpreter(model, resolver, tensor_arena, kTensorArenaSize);
+    static tflite::MicroInterpreter static_interpreter(
+        model,
+        resolver,
+        tensor_arena,
+        kTensorArenaSize
+    );
 
     interpreter = &static_interpreter;
 
