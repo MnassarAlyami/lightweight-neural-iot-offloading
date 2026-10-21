@@ -56,7 +56,7 @@ def create_interpreter():
     print(f" Shape : {output_details[0]['shape']}")
     print(f" Data type : {output_details[0]['dtype']}")
     print(f" Quantization: {output_details[0]['quantization']}")
-    return (interpreter, input_details, output_details)
+    return interpreter, input_details, output_details
 
 
 def run_tflite_inference(interpreter, input_details, output_details, x_test):
@@ -137,13 +137,13 @@ def main():
     print("=" * 65)
     print("FP32 TFLite Conversion and Validation")
     print("=" * 65)
-    (keras_model, x_test, y_test, reference_actions) = load_artifacts()
-    model_size = convert_to_fp32_tflite(keras_model)
-    (interpreter, input_details, output_details) = create_interpreter()
-    assert (input_details[0]["dtype"] == np.float32), "FP32 TFLite input is not float32."
-    assert (output_details[0]["dtype"] == np.float32), "FP32 TFLite output is not float32."
-    assert tuple(input_details[0]["shape"]) == (1, 4), ("Unexpected input shape.")
-    assert tuple(output_details[0]["shape"]) == (1, 3), ("Unexpected output shape.")
+    keras_model, x_test, y_test, reference_actions = load_artifacts()
+    convert_to_fp32_tflite(keras_model)
+    interpreter, input_details, output_details = create_interpreter()
+    assert input_details[0]["dtype"] == np.float32, "FP32 TFLite input is not float32."
+    assert output_details[0]["dtype"] == np.float32, "FP32 TFLite output is not float32."
+    assert tuple(input_details[0]["shape"]) == (1, 4), "Unexpected input shape."
+    assert tuple(output_details[0]["shape"]) == (1, 3), "Unexpected output shape."
     tflite_predictions = run_tflite_inference(interpreter, input_details, output_details, x_test)
     results = evaluate_equivalence(keras_model, x_test, y_test, reference_actions, tflite_predictions)
     save_validation_outputs(results)
