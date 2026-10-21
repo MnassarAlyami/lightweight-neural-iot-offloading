@@ -22,6 +22,6 @@ The following supplied artifacts were checked against the final experiment but a
 | `offloading_fp32.keras` | 36,672 B | `ffb636ef4faee5c9713c35167198f3647f5b89ac342343e2c07f2549d336267b` |
 | `x_test.npy` | 120,128 B | `ef5f4bc0229035fcbb39b6aa5260ff0bbedd6cda257b7ff5773c9f04a511b70e` |
 | `y_test.npy` | 90,128 B | `e89a7ad0958d547192880e12250f04d0db8ee266420cb8034b1757d24f5ac99e` |
-| `oracle_actions.npy` | 60,128 B | `b7999f74d66a528c0078461fd8ac7442924fa70dbf184eeb73929cb83b3b4cb3` |
+| `reference_actions.npy` | 60,128 B | `b7999f74d66a528c0078461fd8ac7442924fa70dbf184eeb73929cb83b3b4cb3` |
 
-The TFLite binary hash is the canonical deployment-artifact identifier. Text formatting or line endings can change a generated C header without changing the embedded model bytes.
+The reference-action array is the same numerical artifact originally supplied under the filename `oracle_actions.npy`; only the repository terminology has been updated. The TFLite binary hash is the canonical deployment-artifact identifier. Text formatting or line endings can change a generated C header without changing the embedded model bytes.
