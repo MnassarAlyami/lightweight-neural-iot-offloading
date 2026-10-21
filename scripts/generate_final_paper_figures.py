@@ -97,17 +97,20 @@ print("=" * 70)
 print("Architectures evaluated:", len(arch))
 print("Architectures satisfying all criteria:", int(arch["qualifies"].sum()))
 
-selected = arch[(arch["hidden_width"] == 16) & (arch["num_blocks"] == 1)].iloc[0]
+failed = arch[~arch["qualifies"]]
+passed = arch[arch["qualifies"]].sort_values(["parameters", "macs", "regret_mean"])
+selected = passed.iloc[0]
+
+selected_width = int(selected["hidden_width"])
+selected_blocks = int(selected["num_blocks"])
+topology = " -> ".join(["4"] + [str(selected_width)] * (selected_blocks + 1) + ["3"])
 
 print()
-print("Selected architecture: 4 -> 16 -> 16 -> 3")
+print(f"Selected architecture: {topology}")
 print("Parameters:", int(selected["parameters"]))
 print("MACs:", int(selected["macs"]))
 print("Mean reference agreement:", f"{selected['agreement_mean'] * 100:.4f}%")
 print("Mean INT8 agreement:", f"{selected['int8_agreement_mean'] * 100:.4f}%")
-
-failed = arch[~arch["qualifies"]]
-passed = arch[arch["qualifies"]]
 
 fig, ax = plt.subplots(figsize=(7.0, 4.3))
 
@@ -133,13 +136,13 @@ ax.scatter(
     s=120,
     marker="*",
     zorder=5,
-    label=r"Selected: $4\!\rightarrow\!16\!\rightarrow\!16\!\rightarrow\!3$"
+    label=f"Selected: {topology}"
 )
 
 ax.axhline(99.0, linestyle="--", linewidth=1.0, label="99% reference-agreement threshold")
 
 ax.annotate(
-    "Selected\n(403 parameters)",
+    f"Selected\n({int(selected['parameters'])} parameters)",
     xy=(selected["parameters"], selected["agreement_mean"] * 100),
     xytext=(35, -42),
     textcoords="offset points",
