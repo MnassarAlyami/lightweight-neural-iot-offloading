@@ -1,6 +1,6 @@
 # A Lightweight Context-Aware Neural Offloading Strategy for IoT Edge Devices
 
-This repository contains the code, frozen model artifacts, evaluation data, and simulated ESP32 proof-of-concept files associated with the manuscript **“A Lightweight Context-Aware Neural Offloading Strategy for IoT Edge Devices.”**
+This repository contains the code, frozen model artifacts, numerical results, and simulated ESP32 proof-of-concept files associated with the manuscript **“A Lightweight Context-Aware Neural Offloading Strategy for IoT Edge Devices.”**
 
 ## Overview
 
