@@ -262,10 +262,10 @@ for name, r in results.items():
         "Median Latency (ms)":
             np.median(r["latency"]),
 
-        "Mean Modeled Energy Cost":
+        "Mean Modeled Energy-Cost Proxy":
             np.mean(r["energy"]),
 
-        "Median Modeled Energy Cost":
+        "Median Modeled Energy-Cost Proxy":
             np.median(r["energy"]),
 
         "Mean Objective":
