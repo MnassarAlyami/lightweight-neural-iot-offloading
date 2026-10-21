@@ -57,7 +57,7 @@ def load_artifacts():
     fp32_predictions = np.load(FP32_TFLITE_PREDICTIONS_PATH).astype(np.float32)
     print(f"Loaded model       : {KERAS_MODEL_PATH}")
     print(f"Test samples       : {len(x_test)}")
-    return (model, x_test, y_test, reference_actions, fp32_actions, fp32_predictions)
+    return model, x_test, y_test, reference_actions, fp32_actions, fp32_predictions
 
 
 def make_representative_dataset(x_train):
@@ -104,11 +104,11 @@ def create_interpreter():
     print(f" Shape : {output_details[0]['shape']}")
     print(f" Data type : {output_details[0]['dtype']}")
     print(f" Quantization: {output_details[0]['quantization']}")
-    assert input_details[0]["dtype"] == np.int8, ("Model input is not INT8.")
-    assert output_details[0]["dtype"] == np.int8, ("Model output is not INT8.")
+    assert input_details[0]["dtype"] == np.int8, "Model input is not INT8."
+    assert output_details[0]["dtype"] == np.int8, "Model output is not INT8."
     assert tuple(input_details[0]["shape"]) == (1, 4), "Unexpected INT8 input shape."
     assert tuple(output_details[0]["shape"]) == (1, 3), "Unexpected INT8 output shape."
-    return (interpreter, input_details, output_details)
+    return interpreter, input_details, output_details
 
 
 def quantize_input(float_input, scale, zero_point):
@@ -199,9 +199,9 @@ def main():
     x_train = reconstruct_training_inputs()
     print(f"Training samples available for calibration: {len(x_train)}")
     print(f"Representative calibration samples: {min(CALIBRATION_SAMPLES, len(x_train))}")
-    (model, x_test, y_test, reference_actions, fp32_actions, fp32_predictions) = load_artifacts()
+    model, x_test, y_test, reference_actions, fp32_actions, fp32_predictions = load_artifacts()
     convert_to_int8(model, x_train)
-    (interpreter, input_details, output_details) = create_interpreter()
+    interpreter, input_details, output_details = create_interpreter()
     (
         int8_raw_outputs,
         int8_predictions
