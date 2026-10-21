@@ -48,7 +48,7 @@ deployment/esp32/
 
 ## Environment
 
-Install the required Python packages with:
+Use Python 3.7.6 for the historical environment, then install the required packages with:
 
 ```bash
 pip install -r requirements.txt
