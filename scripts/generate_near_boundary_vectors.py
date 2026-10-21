@@ -4,13 +4,13 @@ import tensorflow as tf
 
 OUTPUT_DIR = "outputs"
 
-MODEL_PATH = os.path.join(OUTPUT_DIR, "offloading_int8.tflite")
+MODEL_PATH = os.path.join("models", "offloading_int8.tflite")
 
 X_TEST_PATH = os.path.join(OUTPUT_DIR, "x_test.npy")
 
 Y_TEST_PATH = os.path.join(OUTPUT_DIR, "y_test.npy")
 
-ORACLE_PATH = os.path.join(OUTPUT_DIR, "oracle_actions.npy")
+REFERENCE_PATH = os.path.join(OUTPUT_DIR, "reference_actions.npy")
 
 NUM_BOUNDARY_VECTORS = 30
 
@@ -18,7 +18,7 @@ x_test = np.load(X_TEST_PATH).astype(np.float32)
 
 y_test = np.load(Y_TEST_PATH).astype(np.float32)
 
-oracle_actions = np.load(ORACLE_PATH)
+reference_actions = np.load(REFERENCE_PATH)
 
 interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
 
@@ -90,7 +90,7 @@ boundary_outputs_float = all_dequantized_outputs[boundary_indices]
 
 boundary_actions = all_actions[boundary_indices]
 
-boundary_oracle_actions = oracle_actions[boundary_indices]
+boundary_reference_actions = reference_actions[boundary_indices]
 
 boundary_margins = all_margins[boundary_indices]
 
@@ -118,7 +118,7 @@ for i in range(NUM_BOUNDARY_VECTORS):
     print("INT8 margin :", boundary_margins[i])
     print("Objective margin :", f"{objective_margins[i]:.10e}")
     print("INT8 action :", boundary_actions[i])
-    print("Oracle action :", boundary_oracle_actions[i])
+    print("Reference action :", boundary_reference_actions[i])
 
 print("\n" + "=" * 75)
 print("BOUNDARY SET SUMMARY")
@@ -132,9 +132,9 @@ print(f"Maximum INT8 margin : {np.max(boundary_margins)}")
 
 print(f"Median INT8 margin : {np.median(boundary_margins):.2f}")
 
-boundary_oracle_agreement = np.mean(boundary_actions == boundary_oracle_actions)
+boundary_reference_agreement = np.mean(boundary_actions == boundary_reference_actions)
 
-print(f"INT8/oracle agreement : {boundary_oracle_agreement * 100:.4f}%")
+print(f"INT8/reference agreement : {boundary_reference_agreement * 100:.4f}%")
 
 np.savez(
     os.path.join(OUTPUT_DIR, "near_boundary_vectors.npz"),
@@ -146,7 +146,7 @@ np.savez(
     int8_margins=boundary_margins,
     objective_margins=objective_margins,
     selected_actions=boundary_actions,
-    oracle_actions=boundary_oracle_actions
+    reference_actions=boundary_reference_actions
 )
 
 header_path = os.path.join(OUTPUT_DIR, "near_boundary_vectors.h")
