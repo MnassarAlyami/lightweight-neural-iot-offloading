@@ -48,7 +48,7 @@ EPSILON = 1e-8
 
 
 def load_artifacts():
-    print("Loading frozen artifacts...")
+    print("Loading generated training and FP32 artifacts...")
     model = tf.keras.models.load_model(KERAS_MODEL_PATH)
     x_test = np.load(X_TEST_PATH).astype(np.float32)
     y_test = np.load(Y_TEST_PATH).astype(np.float32)
