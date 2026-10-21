@@ -12,7 +12,7 @@ X_TEST_PATH = os.path.join(OUTPUT_DIR, "x_test.npy")
 
 Y_TEST_PATH = os.path.join(OUTPUT_DIR, "y_test.npy")
 
-ORACLE_ACTIONS_PATH = os.path.join(OUTPUT_DIR, "oracle_actions.npy")
+REFERENCE_ACTIONS_PATH = os.path.join(OUTPUT_DIR, "reference_actions.npy")
 
 EPSILON = 1e-8
 
@@ -22,10 +22,10 @@ def load_artifacts():
     model = tf.keras.models.load_model(KERAS_MODEL_PATH)
     x_test = np.load(X_TEST_PATH).astype(np.float32)
     y_test = np.load(Y_TEST_PATH).astype(np.float32)
-    oracle_actions = np.load(ORACLE_ACTIONS_PATH)
+    reference_actions = np.load(REFERENCE_ACTIONS_PATH)
     print(f"Loaded Keras model : {KERAS_MODEL_PATH}")
     print(f"Test samples       : {len(x_test)}")
-    return model, x_test, y_test, oracle_actions
+    return model, x_test, y_test, reference_actions
 
 
 def convert_to_fp32_tflite(model):
@@ -37,7 +37,7 @@ def convert_to_fp32_tflite(model):
 
     model_size_bytes = os.path.getsize(TFLITE_MODEL_PATH)
     print(f"Saved FP32 TFLite model : {TFLITE_MODEL_PATH}")
-    print(f"TFLite model size : {model_size_bytes} bytes ({model_size_bytes / 1024:.3f} KB)")
+    print(f"TFLite model size : {model_size_bytes} bytes ({model_size_bytes / 1024:.3f} KiB)")
     return model_size_bytes
 
 
@@ -63,7 +63,7 @@ def run_tflite_inference(interpreter, input_details, output_details, x_test):
     input_index = input_details[0]["index"]
     output_index = output_details[0]["index"]
     predictions = []
-    print("\nRunning FP32 TFLite inference " f"on {len(x_test)} test samples...")
+    print(f"\nRunning FP32 TFLite inference on {len(x_test)} test samples...")
     for sample in x_test:
         sample = np.expand_dims(sample, axis=0).astype(np.float32)
         interpreter.set_tensor(input_index, sample)
@@ -74,7 +74,7 @@ def run_tflite_inference(interpreter, input_details, output_details, x_test):
     return np.asarray(predictions, dtype=np.float32)
 
 
-def evaluate_equivalence(keras_model, x_test, y_test, oracle_actions, tflite_predictions):
+def evaluate_equivalence(keras_model, x_test, y_test, reference_actions, tflite_predictions):
     print("\nGenerating Keras FP32 reference predictions...")
     keras_predictions = keras_model.predict(x_test, batch_size=64, verbose=0)
     keras_actions = np.argmin(keras_predictions, axis=1)
@@ -84,13 +84,13 @@ def evaluate_equivalence(keras_model, x_test, y_test, oracle_actions, tflite_pre
     mean_abs_difference = np.mean(absolute_difference)
     keras_tflite_agreement = np.mean(keras_actions == tflite_actions)
     number_action_disagreements = np.sum(keras_actions != tflite_actions)
-    tflite_oracle_agreement = np.mean(tflite_actions == oracle_actions)
-    tflite_oracle_disagreements = np.sum(tflite_actions != oracle_actions)
+    tflite_reference_agreement = np.mean(tflite_actions == reference_actions)
+    tflite_reference_disagreements = np.sum(tflite_actions != reference_actions)
     indices = np.arange(len(y_test))
     selected_cost = y_test[indices, tflite_actions]
-    oracle_cost = y_test[indices, oracle_actions]
-    regret = selected_cost - oracle_cost
-    normalized_regret = regret / (oracle_cost + EPSILON)
+    reference_cost = y_test[indices, reference_actions]
+    regret = selected_cost - reference_cost
+    normalized_regret = regret / (reference_cost + EPSILON)
     print("\n" + "=" * 65)
     print("FP32 TFLITE VALIDATION RESULTS")
     print("=" * 65)
@@ -98,8 +98,8 @@ def evaluate_equivalence(keras_model, x_test, y_test, oracle_actions, tflite_pre
     print(f"Mean prediction difference : {mean_abs_difference:.10e}")
     print(f"Keras -> TFLite agreement : {keras_tflite_agreement * 100:.6f}%")
     print(f"Keras/TFLite disagreements : {number_action_disagreements}")
-    print(f"TFLite -> oracle agreement : {tflite_oracle_agreement * 100:.6f}%")
-    print(f"TFLite/oracle disagreements : {tflite_oracle_disagreements}")
+    print(f"TFLite -> reference agreement : {tflite_reference_agreement * 100:.6f}%")
+    print(f"TFLite/reference disagreements : {tflite_reference_disagreements}")
     print(f"Mean TFLite regret : {np.mean(regret):.10e}")
     print(f"Median TFLite regret : {np.median(regret):.10e}")
     print(f"Mean normalized regret : {np.mean(normalized_regret):.10e}")
@@ -137,7 +137,7 @@ def main():
     print("=" * 65)
     print("FP32 TFLite Conversion and Validation")
     print("=" * 65)
-    (keras_model, x_test, y_test, oracle_actions) = load_artifacts()
+    (keras_model, x_test, y_test, reference_actions) = load_artifacts()
     model_size = convert_to_fp32_tflite(keras_model)
     (interpreter, input_details, output_details) = create_interpreter()
     assert (input_details[0]["dtype"] == np.float32), "FP32 TFLite input is not float32."
@@ -145,7 +145,7 @@ def main():
     assert tuple(input_details[0]["shape"]) == (1, 4), ("Unexpected input shape.")
     assert tuple(output_details[0]["shape"]) == (1, 3), ("Unexpected output shape.")
     tflite_predictions = run_tflite_inference(interpreter, input_details, output_details, x_test)
-    results = evaluate_equivalence(keras_model, x_test, y_test, oracle_actions, tflite_predictions)
+    results = evaluate_equivalence(keras_model, x_test, y_test, reference_actions, tflite_predictions)
     save_validation_outputs(results)
     print("\n" + "=" * 65)
     print("FP32 TFLite validation completed.")
