@@ -34,3 +34,5 @@ The committed CSV files under `results/` are the frozen numerical outputs used f
 The recovered architecture-search implementation samples network latency over 5--250 ms, whereas the standalone deployment-model dataset uses 0--250 ms. The committed architecture-search CSV files preserve the configuration used for the reported search.
 
 The recovered architecture-search code applies each run seed at the start of training, after the corresponding model object has been constructed. The frozen seed-level CSV therefore remains the authoritative record for the reported architecture-search statistics.
+
+Deployment-vector generation and final policy-figure generation use the frozen INT8 model under `models/` so that the reported deployment behavior is not replaced by a newly converted binary.
