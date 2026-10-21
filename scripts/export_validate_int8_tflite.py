@@ -38,7 +38,7 @@ X_TEST_PATH = os.path.join(OUTPUT_DIR, "x_test.npy")
 
 Y_TEST_PATH = os.path.join(OUTPUT_DIR, "y_test.npy")
 
-ORACLE_ACTIONS_PATH = os.path.join(OUTPUT_DIR, "oracle_actions.npy")
+REFERENCE_ACTIONS_PATH = os.path.join(OUTPUT_DIR, "reference_actions.npy")
 
 FP32_TFLITE_ACTIONS_PATH = os.path.join(OUTPUT_DIR, "fp32_tflite_actions.npy")
 
@@ -52,12 +52,12 @@ def load_artifacts():
     model = tf.keras.models.load_model(KERAS_MODEL_PATH)
     x_test = np.load(X_TEST_PATH).astype(np.float32)
     y_test = np.load(Y_TEST_PATH).astype(np.float32)
-    oracle_actions = np.load(ORACLE_ACTIONS_PATH)
+    reference_actions = np.load(REFERENCE_ACTIONS_PATH)
     fp32_actions = np.load(FP32_TFLITE_ACTIONS_PATH)
     fp32_predictions = np.load(FP32_TFLITE_PREDICTIONS_PATH).astype(np.float32)
     print(f"Loaded model       : {KERAS_MODEL_PATH}")
     print(f"Test samples       : {len(x_test)}")
-    return (model, x_test, y_test, oracle_actions, fp32_actions, fp32_predictions)
+    return (model, x_test, y_test, reference_actions, fp32_actions, fp32_predictions)
 
 
 def make_representative_dataset(x_train):
@@ -85,7 +85,7 @@ def convert_to_int8(model, x_train):
 
     model_size_bytes = os.path.getsize(INT8_MODEL_PATH)
     print(f"Saved INT8 TFLite model : {INT8_MODEL_PATH}")
-    print(f"INT8 model size : {model_size_bytes} bytes ({model_size_bytes / 1024:.3f} KB)")
+    print(f"INT8 model size : {model_size_bytes} bytes ({model_size_bytes / 1024:.3f} KiB)")
     return model_size_bytes
 
 
@@ -134,7 +134,7 @@ def run_int8_inference(interpreter, input_details, output_details, x_test):
     output_scale, output_zero_point = output_details[0]["quantization"]
     int8_outputs = []
     dequantized_predictions = []
-    print("\nRunning INT8 TFLite inference on " f"{len(x_test)} test samples...")
+    print(f"\nRunning INT8 TFLite inference on {len(x_test)} test samples...")
     for sample in x_test:
         sample = np.expand_dims(sample, axis=0).astype(np.float32)
         quantized_sample = quantize_input(sample, input_scale, input_zero_point)
@@ -151,27 +151,27 @@ def run_int8_inference(interpreter, input_details, output_details, x_test):
     )
 
 
-def evaluate_int8(y_test, oracle_actions, fp32_actions, fp32_predictions, int8_predictions):
+def evaluate_int8(y_test, reference_actions, fp32_actions, fp32_predictions, int8_predictions):
     int8_actions = np.argmin(int8_predictions, axis=1)
     fp32_int8_agreement = np.mean(fp32_actions == int8_actions)
     fp32_int8_disagreements = np.sum(fp32_actions != int8_actions)
-    int8_oracle_agreement = np.mean(int8_actions == oracle_actions)
-    int8_oracle_disagreements = np.sum(int8_actions != oracle_actions)
+    int8_reference_agreement = np.mean(int8_actions == reference_actions)
+    int8_reference_disagreements = np.sum(int8_actions != reference_actions)
     abs_difference = np.abs(fp32_predictions - int8_predictions)
     mean_prediction_difference = np.mean(abs_difference)
     max_prediction_difference = np.max(abs_difference)
     indices = np.arange(len(y_test))
     selected_cost = y_test[indices, int8_actions]
-    oracle_cost = y_test[indices, oracle_actions]
-    regret = selected_cost - oracle_cost
-    normalized_regret = regret / (oracle_cost + EPSILON)
+    reference_cost = y_test[indices, reference_actions]
+    regret = selected_cost - reference_cost
+    normalized_regret = regret / (reference_cost + EPSILON)
     print("\n" + "=" * 65)
     print("FULL-INT8 TFLITE VALIDATION RESULTS")
     print("=" * 65)
     print(f"FP32 -> INT8 agreement : {fp32_int8_agreement * 100:.6f}%")
     print(f"FP32/INT8 disagreements : {fp32_int8_disagreements}")
-    print(f"INT8 -> oracle agreement : {int8_oracle_agreement * 100:.6f}%")
-    print(f"INT8/oracle disagreements : {int8_oracle_disagreements}")
+    print(f"INT8 -> reference agreement : {int8_reference_agreement * 100:.6f}%")
+    print(f"INT8/reference disagreements : {int8_reference_disagreements}")
     print(f"Mean prediction difference : {mean_prediction_difference:.10e}")
     print(f"Maximum prediction difference: {max_prediction_difference:.10e}")
     print(f"Mean INT8 regret : {np.mean(regret):.10e}")
@@ -195,7 +195,11 @@ def main():
     print("=" * 65)
     print("Full-Integer INT8 TFLite Conversion and Validation")
     print("=" * 65)
-    (model, x_test, y_test, oracle_actions, fp32_actions, fp32_predictions) = load_artifacts()
+    print("\nReconstructing training data for INT8 calibration...")
+    x_train = reconstruct_training_inputs()
+    print(f"Training samples available for calibration: {len(x_train)}")
+    print(f"Representative calibration samples: {min(CALIBRATION_SAMPLES, len(x_train))}")
+    (model, x_test, y_test, reference_actions, fp32_actions, fp32_predictions) = load_artifacts()
     convert_to_int8(model, x_train)
     (interpreter, input_details, output_details) = create_interpreter()
     (
@@ -207,19 +211,11 @@ def main():
         output_details,
         x_test
     )
-    results = evaluate_int8(y_test, oracle_actions, fp32_actions, fp32_predictions, int8_predictions)
+    results = evaluate_int8(y_test, reference_actions, fp32_actions, fp32_predictions, int8_predictions)
     save_results(int8_raw_outputs, int8_predictions, results)
     print("\n" + "=" * 65)
     print("Full-INT8 validation completed.")
     print("=" * 65)
-
-print("\nReconstructing training data for INT8 calibration...")
-
-x_train = reconstruct_training_inputs()
-
-print(f"Training samples available for calibration: {len(x_train)}")
-
-print(f"Representative calibration samples: {min(CALIBRATION_SAMPLES, len(x_train))}")
 
 if __name__ == "__main__":
     main()
